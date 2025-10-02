@@ -12,6 +12,7 @@ public class PostController {
 
     @GetMapping("/read")
     public String read() {
-       return "Hello World";
+        return "read";
+
     }
 }
