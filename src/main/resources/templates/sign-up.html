@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OAuth2 Login Success</title>
+</head>
+<body>
+<h1>OAuth2 로그인 성공</h1>
+<p id="token">토큰 확인 중...</p>
+
+<script>
+    // URL에서 쿼리 파라미터 읽기
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');
+    document.getElementById('token').innerText = accessToken
+        ? `Access Token: ${accessToken}`
+        : '토큰이 없습니다.';
+</script>
+</body>
+</html>
