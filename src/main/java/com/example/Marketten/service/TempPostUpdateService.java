@@ -7,11 +7,10 @@ import com.example.Marketten.dto.temppost.TempPostResponce;
 import com.example.Marketten.dto.temppost.TempPostUpdateRequest;
 
 public interface TempPostUpdateService {
-
     /**
      * 임시 저장글 생성
      */
-    TempPostResponce createTempPost(TempPostRequest request, String userEmail)
+    TempPostResponce createTempPost(TempPostRequest request, String userEmail);
 
     /**
      * 임시 저장글 수정 (step1/step2 모두 가능)
