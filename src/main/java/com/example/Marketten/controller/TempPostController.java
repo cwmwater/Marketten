@@ -16,18 +16,15 @@ public class TempPostController {
     private final TempPostUpdateService tempPostService;
 
     /** -------------------- 임시 저장글 생성 -------------------- */
-    @PostMapping("/{inputId}/{step}")
+    @PostMapping("/temp/{step}")
     public ResponseEntity<TempPostResponce> createTempPost(
-            @PathVariable(required = false) Long inputId,
             @PathVariable Integer step,
             @RequestBody TempPostRequest request,
-            @RequestHeader("email") String userEmail) { // 예: 이메일 헤더
+            @RequestHeader("email") String userEmail) { // 이메일 기반 사용자 판단
 
-        request.setStep(step);
-        if (inputId != null) {
-            request.setPostId(inputId);
-        }
+        request.setStep(step); // step 세팅
 
+        // 이제 inputId 체크 없이 바로 서비스 호출
         TempPostResponce response = tempPostService.createTempPost(request, userEmail);
         return ResponseEntity.ok(response);
     }

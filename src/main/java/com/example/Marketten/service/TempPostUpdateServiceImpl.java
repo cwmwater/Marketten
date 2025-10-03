@@ -32,30 +32,16 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 1. FinalPost 조회, 없으면 새로 생성
-        FinalPost post;
-        if (request.getPostId() != null) {
-            post = finalPostRepository.findById(request.getPostId()).orElseGet(() ->
-                    finalPostRepository.save(FinalPost.builder()
-                            .user(user)                     // 이메일 기반 사용자 연결
-                            .finalTone("STANDARD")
-                            .status("WRITING")
-                            .createdDate(LocalDateTime.now())
-                            .updatedDate(LocalDateTime.now())
-                            .build())
-            );
-        } else {
-            post = finalPostRepository.save(FinalPost.builder()
-                    .user(user)                             // 이메일 기반 사용자 연결
-                    .finalTone("STANDARD")
-                    .status("WRITING")
-                    .createdDate(LocalDateTime.now())
-                    .updatedDate(LocalDateTime.now())
-                    .build());
-        }
+        // FinalPost 새로 생성
+        FinalPost post = finalPostRepository.save(FinalPost.builder()
+                .user(user)
+                .finalTone("STANDARD")
+                .status("WRITING")
+                .createdDate(LocalDateTime.now())
+                .updatedDate(LocalDateTime.now())
+                .build());
 
-
-        // 2. TempPost 생성
+        // TempPost 생성
         TempPost temp = TempPost.builder()
                 .post(post)
                 .productInfo(request.getProductInfo())
@@ -70,7 +56,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        // 3. KeywordList 매핑
+        // KeywordList 매핑
         if (request.getKeywordList() != null) {
             request.getKeywordList().forEach(k -> {
                 KeywordList keyword = KeywordList.builder()
@@ -82,7 +68,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
             });
         }
 
-        // 4. TitleList 매핑
+        // TitleList 매핑
         if (request.getTitleList() != null) {
             request.getTitleList().forEach(t -> {
                 TitleList title = TitleList.builder()
