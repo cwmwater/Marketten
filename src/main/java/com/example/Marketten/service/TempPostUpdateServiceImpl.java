@@ -1,5 +1,6 @@
 package com.example.Marketten.service;
 
+
 import com.example.Marketten.domain.*;
 import com.example.Marketten.dto.list.KeywordListDTO;
 import com.example.Marketten.dto.list.TitleListDTO;
@@ -237,4 +238,5 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 .keywordList(keywords)
                 .build();
     }
+
 }

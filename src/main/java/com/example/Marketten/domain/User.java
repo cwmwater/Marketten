@@ -2,68 +2,97 @@ package com.example.Marketten.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "users")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class User {
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "users")
+@DynamicInsert // 값이 없는 필드는 DB의 기본값을 사용하도록 함
+public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필드를 자동 관리
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId; // 유저 고유 아이디
+    @Column(name = "user_id")
+    private Long userId; // ID 필드명을 'userId'로 유지
 
-    @Column(length = 255, nullable = false, unique = true)
-    private String email; // 이메일
+    @Column(unique = true, nullable = false, length = 100)
+    private String email;
 
-    @Column(length = 1000, nullable = false)
-    private String password; // 해시화된 비밀번호
+    @Column(nullable = false, length = 100)
+    private String password; // 암호화된 비밀번호 저장
 
-    @Column(length = 100, nullable = false)
-    private String nickname; // 이름
+    @Column(nullable = false, length = 20)
+    private String nickname;
 
-    @Column(length = 1000)
-    private String imageUrl; // 프로필 이미지 url
+    @Column(name = "image_url")
+    private String imageUrl; // 프로필 이미지 URL
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
-    private SocialProvider provider; // 로그인 구분
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
-    private Status status; // 계정 상태
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt; // 마지막 로그인 시간
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
-    private Role role; // 권한
-
     @Column(nullable = false)
-    private Integer tempPost = 0; // 임시 저장 글 갯수
+    private Role role; // 사용자 권한 (예: USER, ADMIN)
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Integer clearPost = 0; // 작성 완료 글 갯수
+    private Status status; // 계정 상태 (예: ACTIVE, INACTIVE)
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LocalDateTime lastLoginAt; // 마지막 로그인 일시
+    private SocialProvider provider; // 가입 경로
 
-    @Column(nullable = false)
-    private Boolean pwFlag; // 비밀번호 랜덤 생성 플래그  1 : 소셜 로그인 0: 사이트 로그인
+    @Column(name = "pw_flag", nullable = false)
+    private boolean pwFlag; // 비밀번호 변경 필요 여부
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now(); // 회원가입 일시
+    @Column(name = "temp_post", nullable = false)
+    private int tempPost; // 임시 저장된 게시물 수
 
-    // User → FinalPost (OneToMany)
-    @OneToMany(mappedBy = "user")
-    private List<FinalPost> finalPosts = new ArrayList<>();
+    @Column(name = "clear_post", nullable = false)
+    private int clearPost; // 최종 게시물 수
 
-    // User → VisitorLog (OneToMany)
-    // User 삭제 시 VisitorLog는 남도록 cascade 생략
-    @OneToMany(mappedBy = "visitor")
-    private List<VisitorLog> visitorLogs = new ArrayList<>();
+    // --- Setter 메서드 (OAuth2 및 로그인 시점 업데이트를 위해 추가) ---
+
+    /**
+     * 소셜 프로바이더를 업데이트합니다. (CustomOAuth2UserService에서 사용됨)
+     *
+     * @param provider 새로운 소셜 프로바이더
+     */
+    public void setProvider(SocialProvider provider) {
+        this.provider = provider;
+    }
+
+    /**
+     * 마지막 로그인 시간을 업데이트합니다. (로그인 서비스 로직에서 사용됨)
+     *
+     * @param lastLoginAt 현재 로그인 시간
+     */
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+    // --- 비즈니스 로직 메서드 ---
+
+    /**
+     * 일반 회원가입을 위한 User 엔티티 빌더입니다.
+     */
+    public static User registerUser(String email, String password, String nickname, String imageUrl, String encodedPassword) {
+        return User.builder()
+                .email(email)
+                .password(encodedPassword)
+                .nickname(nickname)
+                .imageUrl(imageUrl)
+                .role(Role.USER)
+                .status(Status.ACTIVE)
+                .provider(SocialProvider.SITE)
+                .pwFlag(false)
+                .tempPost(0)
+                .clearPost(0)
+                .build();
+    }
 }

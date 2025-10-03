@@ -32,6 +32,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
@@ -67,12 +68,14 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         User user;
 
         if (userOptional.isPresent()) {
-            // 기존 유저가 있으면 provider 갱신
+            // 기존 유저가 있으면 provider 갱신 및 로그인 시간 업데이트
             user = userOptional.get();
             if (!user.getProvider().name().equalsIgnoreCase(registrationId)) {
                 user.setProvider(SocialProvider.valueOf(registrationId.toUpperCase()));
-                userRepository.save(user); // provider 변경 저장
             }
+            // 여기서 user.setLastLoginAt(LocalDateTime.now()) 등을 통해 로그인 시간을 갱신하는 로직이 필요할 수 있습니다.
+            // 현재 엔티티에 setter가 없으므로 해당 로직이 있다면 User.java에 추가해야 합니다.
+            userRepository.save(user); // provider 변경 저장
         } else {
             // 신규 유저 생성
             user = userRepository.save(
@@ -87,8 +90,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                             .role(Role.USER)
                             .tempPost(0)
                             .clearPost(0)
-                            .createdAt(LocalDateTime.now())
-                            .lastLoginAt(LocalDateTime.now())
+                            // created_at(LocalDateTime.now()) 제거 -> BaseEntity가 자동 처리
+                            // lastLoginAt(LocalDateTime.now()) 제거 -> 필요하다면 User 엔티티에 메서드 추가 후 처리
                             .build()
             );
         }

@@ -15,7 +15,9 @@ public class TempPostController {
 
     private final TempPostUpdateService tempPostService;
 
-    /** -------------------- 임시 저장글 생성 -------------------- */
+    /**
+     * -------------------- 임시 저장글 생성 --------------------
+     */
     @PostMapping("/temp/{step}")
     public ResponseEntity<TempPostResponce> createTempPost(
             @PathVariable Integer step,
@@ -29,7 +31,9 @@ public class TempPostController {
         return ResponseEntity.ok(response);
     }
 
-    /** -------------------- 임시 저장글 수정 -------------------- */
+    /**
+     * -------------------- 임시 저장글 수정 --------------------
+     */
     @PatchMapping("/{inputId}/{step}")
     public ResponseEntity<TempPostResponce> updateTempPost(
             @PathVariable Long inputId,
@@ -41,14 +45,18 @@ public class TempPostController {
         return ResponseEntity.ok(response);
     }
 
-    /** -------------------- 임시 저장글 삭제 -------------------- */
+    /**
+     * -------------------- 임시 저장글 삭제 --------------------
+     */
     @DeleteMapping("/{inputId}")
     public ResponseEntity<Void> deleteTempPost(@PathVariable Long inputId) {
         tempPostService.deleteTempPost(inputId);
         return ResponseEntity.noContent().build();
     }
 
-    /** -------------------- 임시 저장글 단계별 조회 -------------------- */
+    /**
+     * -------------------- 임시 저장글 단계별 조회 --------------------
+     */
     @GetMapping("/{inputId}/{step}")
     public ResponseEntity<TempPostResponce> getTempPost(
             @PathVariable Long inputId,
@@ -58,7 +66,9 @@ public class TempPostController {
         return ResponseEntity.ok(response);
     }
 
-    /** -------------------- Step2 액션 처리 (본문, 키워드, 제목 등) -------------------- */
+    /**
+     * -------------------- Step2 액션 처리 (본문, 키워드, 제목 등) --------------------
+     */
     @PostMapping("/{inputId}/action/{action}")
     public ResponseEntity<TempPostResponce> handleStep2Action(
             @PathVariable Long inputId,
