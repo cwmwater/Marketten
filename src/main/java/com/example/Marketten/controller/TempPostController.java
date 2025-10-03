@@ -7,5 +7,5 @@ import org.springframework.web.bind.annotation.RestController;
 /*@RestController
 @RequestMapping("")
 @Slf4j*/
-public class UserController {
+public class TempPostController {
 }
