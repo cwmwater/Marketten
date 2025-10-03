@@ -1,17 +1,39 @@
 package com.example.Marketten.controller;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.Marketten.dto.post.PostResponse;
+import com.example.Marketten.dto.post.PostUpdateRequest;
+import com.example.Marketten.service.PostCreateService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("")
-@Slf4j
+@RequestMapping("/api/posts")
+@RequiredArgsConstructor
 public class PostController {
 
-    @GetMapping("/read")
-    public String read() {
-        return "read";
+    private final PostCreateService postCreateService;
+
+    /** -------------------- 최종글 조회 -------------------- */
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
+        PostResponse response = postCreateService.getPost(postId);
+        return ResponseEntity.ok(response);
+    }
+
+    /** -------------------- 최종글 수정 -------------------- */
+    @PatchMapping("/{postId}")
+    public ResponseEntity<PostResponse> updatePost(
+            @PathVariable Long postId,
+            @RequestBody PostUpdateRequest request) {
+        PostResponse response = postCreateService.updatePost(postId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /** -------------------- 최종글 삭제 -------------------- */
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
+        postCreateService.deletePost(postId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -36,9 +36,6 @@ public class TempPost {
     private String keywords; // 선택한 키워드
 
     @Column(length = 500)
-    private String keywordsList; // 키워드 리스트
-
-    @Column(length = 500)
     private String titleKeywords; // 선택된 제목
 
     @Column(length = 20, nullable = false)
@@ -57,4 +54,8 @@ public class TempPost {
     // TempPost 삭제 시 관련 제목 리스트도 삭제
     @OneToMany(mappedBy = "tempPost", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TitleList> titleLists = new ArrayList<>();
+
+    // TempPost 삭제 시 관련 키워드 리스트도 삭제
+    @OneToMany(mappedBy = "tempPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<KeywordList> keywordLists = new ArrayList<>();
 }
