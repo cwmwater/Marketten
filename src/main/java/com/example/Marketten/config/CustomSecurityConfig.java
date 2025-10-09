@@ -2,6 +2,8 @@ package com.example.Marketten.config;
 
 import com.example.Marketten.repository.UserRepository;
 import com.example.Marketten.security.filter.JWTCheckFilter;
+import com.example.Marketten.security.handler.CustomAccessDeniedHandler;
+import com.example.Marketten.security.handler.CustomAuthenticationEntryPoint;
 import com.example.Marketten.security.handler.OAuth2LoginFailureHandler;
 import com.example.Marketten.security.handler.OAuth2LoginSuccessHandler;
 import com.example.Marketten.service.CustomOAuth2UserService;
@@ -16,7 +18,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.SecurityContextHolderFilter; // ✨ SecurityContextHolderFilter 임포트 추가
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -47,11 +50,16 @@ public class CustomSecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
         http.csrf(csrf -> csrf.disable());
 
+        // 🚨 401 Unauthorized 대신 리다이렉트 되는 기본 동작을 비활성화하고 JSON 응답을 강제
+        http.exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint()) // 인증 실패 시 401 에러 반환 (추가 구현 필요)
+                .accessDeniedHandler(new CustomAccessDeniedHandler()) // 인가 실패 시 403 에러 반환
+        );
 
-        // 1. 요청 경로 권한 설정 활성화 (가장 먼저 처리)
+        // 1. 요청 경로 권한 설정 활성화
         http.authorizeHttpRequests(auth -> auth
-                // 로그인, 회원가입 등 인증 경로는 모두 허용
-                .requestMatchers("/api/auth/**").permitAll()
+                // 로그인, 회원가입, 토큰 재발급 등 인증 관련 경로는 모두 허용
+                .requestMatchers("/api/auth/**", "/api/mkt/v1/temp/**", "/api/mkt/v1/post/**", "/api/products/image/**").permitAll()
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated());
 
@@ -64,11 +72,11 @@ public class CustomSecurityConfig {
                 )
         );
 
-        // 3. JWT 체크 필터 적용 위치 변경
-        // 가장 안전하게 permitAll()이 적용되도록 SecurityContextHolderFilter 앞에 위치시킵니다.
+        // 3. JWT 체크 필터 적용
+        // SecurityContextHolderFilter 이전에 위치시켜, SecurityContext에 인증 객체를 등록합니다.
         http.addFilterBefore(
                 new JWTCheckFilter(jwtUtil, userRepository),
-                SecurityContextHolderFilter.class // ✨ 필터 위치 변경
+                SecurityContextHolderFilter.class
         );
 
         return http.build();

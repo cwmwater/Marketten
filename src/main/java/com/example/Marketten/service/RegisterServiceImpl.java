@@ -4,6 +4,7 @@ import com.example.Marketten.domain.Role;
 import com.example.Marketten.domain.Status;
 import com.example.Marketten.domain.SocialProvider;
 import com.example.Marketten.domain.User;
+import com.example.Marketten.dto.auth.TokenInfo;
 import com.example.Marketten.dto.login.LoginResponse;
 import com.example.Marketten.dto.user.UserRequest;
 import com.example.Marketten.repository.UserRepository;
@@ -22,7 +23,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final LoginService loginService; // 자동 로그인을 위한 LoginService 인터페이스 주입
 
     @Override
-    public LoginResponse registerNewUserAndLogin(UserRequest request) {
+    public TokenInfo registerNewUserAndLogin(UserRequest request) {
 
         // 이메일 중복 검사
         if (userRepository.existsByEmail(request.getEmail())) {

@@ -92,6 +92,27 @@ public class JWTUtil {
 
 
     }
+
+    /**
+     * 토큰의 유효성만 확인하고 결과를 boolean으로 반환합니다.
+     * validateToken() 메서드를 호출하여 예외가 발생하면 false를 반환합니다.
+     *
+     * @param token 검증할 JWT 토큰
+     * @return 유효하면 true, 아니면 false
+     */
+    public boolean isTokenValid(String token) {
+        try {
+            // 기존의 validateToken 메서드를 호출하여 유효성 검증을 위임합니다.
+            validateToken(token);
+            return true;
+        } catch (CustomJWTException e) {
+            // 토큰이 만료되거나 형식이 잘못된 경우
+            return false;
+        } catch (Exception e) {
+            // 그 외 예외
+            return false;
+        }
+    }
     public String parseEmailFromToken(String token) {
         Map<String, Object> claims = validateToken(token);
         return (String) claims.get("email");
