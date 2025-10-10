@@ -18,7 +18,7 @@ public class TempPostController {
     /**
      * -------------------- 임시 저장글 생성 --------------------
      */
-    @PostMapping("/temp/{step}")
+    @PostMapping("/{step}")
     public ResponseEntity<TempPostResponce> createTempPost(
             @PathVariable Integer step,
             @RequestBody TempPostRequest request,

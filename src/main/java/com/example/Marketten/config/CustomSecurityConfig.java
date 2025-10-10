@@ -68,17 +68,9 @@ public class CustomSecurityConfig {
 
         // 1. 요청 경로 권한 설정 (가장 중요: permitAll()을 먼저 선언)
         http.authorizeHttpRequests(auth -> auth
-                // permitAll() 경로를 배열 형태로 선언하여 최우선으로 허용합니다.
-                .requestMatchers(
-                        AntPathRequestMatcher.antMatcher("/api/auth/**"),
-                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
-                        AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"), // OAuth2 콜백 경로
-                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/temp/**"),
-                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/post/**"),
-                        AntPathRequestMatcher.antMatcher("/api/products/image/**"),
-                        AntPathRequestMatcher.antMatcher("/**") // 기본 경로 및 모든 정적 파일 허용
-                ).permitAll()
-                // 그 외 모든 요청은 JWT 또는 OAuth2 인증이 필요
+                // 로그인, 회원가입, 토큰 재발급 등 인증 관련 경로는 모두 허용
+                .requestMatchers("/api/auth/**", "/api/mkt/temp/**", "/api/mkt/post/**", "/api/products/image/**").permitAll()
+                // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated());
 
         // 2. JWT 체크 필터 적용
