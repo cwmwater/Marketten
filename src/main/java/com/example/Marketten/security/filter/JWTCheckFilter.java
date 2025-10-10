@@ -50,6 +50,14 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             return true;
         }
 
+        // ✨ 소셜 로그인 관련 경로 추가: 토큰 검증 면제
+        if (requestURI.startsWith("/oauth2/authorization/") ||
+                requestURI.startsWith("/login/oauth2/code/")) {
+            log.info("******* JWTCheckFilter - shouldNotFilter : Path OAuth2 matched -> True (Permitted Path)");
+            return true;
+        }
+
+
         // 이미지 리소스 요청 경로 -> 제외 (필요 시 추가)
         if (requestURI.startsWith("/api/products/image/")) {
             log.info("******* JWTCheckFilter - shouldNotFilter : Path /api/products/image/ matched -> True");

@@ -18,7 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JWTUtil jwtUtil;  // JwtService 대신 JwtUtil
+    private final JWTUtil jwtUtil;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -28,30 +28,32 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String email = oAuth2User.getEmail();
 
         try {
-            // 신규 사용자(가입 필요) 판단: 필요 시 SubscribeType.FREE 또는 특정 조건 사용
-            boolean isNewUser = oAuth2User.getRole() == null; // 또는 다른 판단 로직
+            // 신규 사용자(가입 필요) 판단: 현재는 Role이 null인지로 판단
+            boolean isNewUser = oAuth2User.getRole() == null;
 
             String accessToken = jwtUtil.generateAccessToken(email);
 
             if (isNewUser) {
-                // 신규 가입 페이지로 redirect
+                // 신규 가입 후 토큰 발급 및 임시 리다이렉트
                 response.addHeader(jwtUtil.getAccessHeader(), "Bearer " + accessToken);
-                response.sendRedirect("http://localhost:5173/auth/redirect?accessToken=" + accessToken);
+                // ✨ 임시: 프론트엔드 연결 없이 백엔드 서버 홈 경로로 리다이렉트
+                response.sendRedirect("http://localhost:8080/");
             } else {
                 // 기존 사용자: access + refresh 토큰 발급
                 String refreshToken = jwtUtil.generateRefreshToken(email);
                 response.addHeader(jwtUtil.getAccessHeader(), "Bearer " + accessToken);
                 response.addHeader(jwtUtil.getRefreshHeader(), "Bearer " + refreshToken);
 
-                // refreshToken 갱신
+                // refreshToken 갱신 (Redis 저장)
                 jwtUtil.updateRefreshToken(email, refreshToken);
 
-                // React 홈 페이지로 redirect
-                response.sendRedirect("http://localhost:5173/auth/redirect?accessToken=" + accessToken);
+                // ✨ 임시: 프론트엔드 연결 없이 백엔드 서버 홈 경로로 리다이렉트
+                response.sendRedirect("http://localhost:8080/");
             }
 
         } catch (Exception e) {
             log.error("OAuth2LoginSuccessHandler Error: ", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "OAuth2 로그인 처리 실패");
         }
-    }}
+    }
+}

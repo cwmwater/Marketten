@@ -19,10 +19,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import java.util.Arrays;
 
@@ -37,6 +39,15 @@ public class CustomSecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
+    // --- 1. CORS Filter Bean 등록 (Security Filter Chain 외부로 분리) ---
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistration(CorsConfigurationSource corsConfigurationSource) {
+        FilterRegistrationBean<CorsFilter> registration = new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource));
+        registration.setOrder(0);
+        return registration;
+    }
+
+    // --- 2. 단일 필터 체인 (JWT/OAuth2) ---
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
@@ -46,24 +57,37 @@ public class CustomSecurityConfig {
         // Session STATELESS 설정 (JWT 사용)
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // CORS 설정 및 CSRF 비활성화
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+        // CSRF 비활성화 (CORS는 FilterRegistrationBean에서 처리)
         http.csrf(csrf -> csrf.disable());
 
-        // 🚨 401 Unauthorized 대신 리다이렉트 되는 기본 동작을 비활성화하고 JSON 응답을 강제
+        // 🚨 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
         http.exceptionHandling(exceptionHandling -> exceptionHandling
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint()) // 인증 실패 시 401 에러 반환 (추가 구현 필요)
-                .accessDeniedHandler(new CustomAccessDeniedHandler()) // 인가 실패 시 403 에러 반환
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                .accessDeniedHandler(new CustomAccessDeniedHandler())
         );
 
-        // 1. 요청 경로 권한 설정 활성화
+        // 1. 요청 경로 권한 설정 (가장 중요: permitAll()을 먼저 선언)
         http.authorizeHttpRequests(auth -> auth
-                // 로그인, 회원가입, 토큰 재발급 등 인증 관련 경로는 모두 허용
-                .requestMatchers("/api/auth/**", "/api/mkt/v1/temp/**", "/api/mkt/v1/post/**", "/api/products/image/**").permitAll()
-                // 그 외 모든 요청은 인증 필요
+                // permitAll() 경로를 배열 형태로 선언하여 최우선으로 허용합니다.
+                .requestMatchers(
+                        AntPathRequestMatcher.antMatcher("/api/auth/**"),
+                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
+                        AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"), // OAuth2 콜백 경로
+                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/temp/**"),
+                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/post/**"),
+                        AntPathRequestMatcher.antMatcher("/api/products/image/**"),
+                        AntPathRequestMatcher.antMatcher("/**") // 기본 경로 및 모든 정적 파일 허용
+                ).permitAll()
+                // 그 외 모든 요청은 JWT 또는 OAuth2 인증이 필요
                 .anyRequest().authenticated());
 
-        // 2. 구글 OAuth2 로그인 활성화
+        // 2. JWT 체크 필터 적용
+        http.addFilterBefore(
+                new JWTCheckFilter(jwtUtil, userRepository),
+                SecurityContextHolderFilter.class
+        );
+
+        // 3. 구글 OAuth2 로그인 활성화
         http.oauth2Login(oauth2 -> oauth2
                 .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler(oAuth2LoginFailureHandler)
@@ -72,15 +96,10 @@ public class CustomSecurityConfig {
                 )
         );
 
-        // 3. JWT 체크 필터 적용
-        // SecurityContextHolderFilter 이전에 위치시켜, SecurityContext에 인증 객체를 등록합니다.
-        http.addFilterBefore(
-                new JWTCheckFilter(jwtUtil, userRepository),
-                SecurityContextHolderFilter.class
-        );
-
         return http.build();
     }
+
+    // --- 기타 Bean 정의 ---
 
     @Bean
     public PasswordEncoder passwordEncoder() {
