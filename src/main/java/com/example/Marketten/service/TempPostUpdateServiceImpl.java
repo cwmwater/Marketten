@@ -161,7 +161,9 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         temp.setProductInfo(request.getProductInfo());
         temp.setProductFeatures(request.getProductFeatures());
         temp.setUserExperience(request.getUserExperience());
-        temp.setSelectedTone(request.getSelectedTone());
+        if (request.getSelectedTone() != null) {
+            temp.setSelectedTone(request.getSelectedTone());
+        }
         temp.setStep(request.getStep());
         temp.setKeywords(request.getKeywords());
         temp.setTitleKeywords(request.getTitleKeywords());
