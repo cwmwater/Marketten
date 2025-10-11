@@ -10,6 +10,7 @@ import com.example.Marketten.service.CustomOAuth2UserService;
 import com.example.Marketten.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,7 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,8 +36,10 @@ public class CustomSecurityConfig {
 
     private final JWTUtil jwtUtil;
     private final UserRepository userRepository;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
+    // ObjectProvider를 사용해 지연 로드 (순환 참조 해결)
+    private final ObjectProvider<OAuth2LoginSuccessHandler> oAuth2LoginSuccessHandlerProvider;
+    private final ObjectProvider<OAuth2LoginFailureHandler> oAuth2LoginFailureHandlerProvider;
 
     // --- 1. CORS Filter Bean 등록 (Security Filter Chain 외부로 분리) ---
     @Bean
@@ -60,16 +62,16 @@ public class CustomSecurityConfig {
         // CSRF 비활성화 (CORS는 FilterRegistrationBean에서 처리)
         http.csrf(csrf -> csrf.disable());
 
-        // 🚨 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
+        // 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
         http.exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
                 .accessDeniedHandler(new CustomAccessDeniedHandler())
         );
 
-        // 1. 요청 경로 권한 설정 (가장 중요: permitAll()을 먼저 선언)
+        // 1. 요청 경로 권한 설정
         http.authorizeHttpRequests(auth -> auth
-                // 로그인, 회원가입, 토큰 재발급 등 인증 관련 경로는 모두 허용
-                .requestMatchers("/api/auth/**", "/api/temp/**", "/api/post/**", "/api/products/image/**").permitAll()
+                // permitAll: 모든 사용자 접근 가능 (토큰 불필요)
+                .requestMatchers("/api/auth/**", "/api/temp/**", "/api/posts/**", "/api/products/image/**").permitAll()
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated());
 
@@ -79,10 +81,10 @@ public class CustomSecurityConfig {
                 SecurityContextHolderFilter.class
         );
 
-        // 3. 구글 OAuth2 로그인 활성화
+        // 3. 구글 OAuth2 로그인 활성화 (ObjectProvider를 통해 지연 로드)
         http.oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler(oAuth2LoginFailureHandler)
+                .successHandler(oAuth2LoginSuccessHandlerProvider.getObject())
+                .failureHandler(oAuth2LoginFailureHandlerProvider.getObject())
                 .userInfoEndpoint(userInfo ->
                         userInfo.userService(customOAuth2UserService)
                 )

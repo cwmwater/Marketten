@@ -9,11 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
+import java.time.ZonedDateTime;
 
 @Slf4j
 @Component
@@ -21,7 +20,6 @@ public class JWTUtil {
 
     @Value("${jwt.secret}")
     private String key;
-    //private static final String SECRET = "bXlzZWNyZXRrZXlteXNlY3JldGtleW15c2VjcmV0a2V5bXlzZWNyZXRrZXlteXNlY3JldGtleW15c2VjcmV0a2V5";
 
     private SecretKey secretKey;
 
@@ -29,6 +27,7 @@ public class JWTUtil {
     public void init() {
         log.info("JWTUtil KEY init : {}", key);
         byte[] decoded = Base64.getDecoder().decode(key);
+        // HS256을 명시적으로 사용 (토큰 생성과 검증 일치)
         this.secretKey = Keys.hmacShaKeyFor(decoded);
     }
 
@@ -40,11 +39,12 @@ public class JWTUtil {
                 .setClaims(claims) // 사용자 정보
                 .setIssuedAt(Date.from(ZonedDateTime.now().toInstant())) // 발생시간
                 .setExpiration(Date.from(ZonedDateTime.now().plusMinutes(expireMinutes).toInstant())) // 유효시간
-                .signWith(secretKey) // 비밀키로 서명
+                .signWith(secretKey, SignatureAlgorithm.HS256) // ← HS256 명시
                 .compact();
         log.info("jwtStr : {}", jwtStr);
         return jwtStr;
     }
+
     // AccessToken 생성
     public String generateAccessToken(String email) {
         return generateToken(Map.of("email", email), 60); // 60분
@@ -63,11 +63,6 @@ public class JWTUtil {
         return "RefreshToken";
     }
 
-    // refreshToken DB 저장용 (UserRepository 주입 필요)
-    public void updateRefreshToken(String email, String refreshToken) {
-        // userRepository.updateRefreshToken(email, refreshToken);
-        // 또는 DB 업데이트 코드 삽입
-    }
     // 토큰 검증 메서드 : 검증 후 Claims 리턴
     public Map<String, Object> validateToken(String token) {
         try {
@@ -89,8 +84,6 @@ public class JWTUtil {
             log.info("Exception : {}", e.getMessage());
             throw new CustomJWTException("Error");
         }
-
-
     }
 
     /**
@@ -102,7 +95,6 @@ public class JWTUtil {
      */
     public boolean isTokenValid(String token) {
         try {
-            // 기존의 validateToken 메서드를 호출하여 유효성 검증을 위임합니다.
             validateToken(token);
             return true;
         } catch (CustomJWTException e) {
@@ -113,17 +105,9 @@ public class JWTUtil {
             return false;
         }
     }
+
     public String parseEmailFromToken(String token) {
         Map<String, Object> claims = validateToken(token);
         return (String) claims.get("email");
     }
-
-
-
-
-
-
-
-
-
 }

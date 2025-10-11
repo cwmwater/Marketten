@@ -21,7 +21,7 @@ public interface TempPostUpdateService {
      * Step2 액션 처리
      * - 본문 생성 / 재생성 / 키워드 분석 / 제목 생성
      */
-    TempPostResponce handleStep2Action(Long inputId, String action, TempPostUpdateRequest request);
+    TempPostResponce handleAction(Long inputId, String action, TempPostUpdateRequest request);
 
     /**
      * 단계별 임시 저장글 조회

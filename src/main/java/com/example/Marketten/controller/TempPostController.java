@@ -66,7 +66,7 @@ public class TempPostController {
             @PathVariable String action,
             @RequestBody TempPostUpdateRequest request) {
 
-        TempPostResponce response = tempPostService.handleStep2Action(inputId, action, request);
+        TempPostResponce response = tempPostService.handleAction(inputId, action, request);
         return ResponseEntity.ok(response);
     }
 }

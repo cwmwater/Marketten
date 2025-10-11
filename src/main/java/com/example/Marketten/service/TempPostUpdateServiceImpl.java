@@ -2,6 +2,10 @@ package com.example.Marketten.service;
 
 
 import com.example.Marketten.domain.*;
+import com.example.Marketten.dto.gpt.ContentGenerateRequest;
+import com.example.Marketten.dto.gpt.ContentKeywordRequest;
+import com.example.Marketten.dto.gpt.TitleGenerateRequest;
+import com.example.Marketten.dto.gpt.TitleKeywordRequest;
 import com.example.Marketten.dto.list.KeywordListDTO;
 import com.example.Marketten.dto.list.TitleListDTO;
 import com.example.Marketten.dto.temppost.TempPostRequest;
@@ -10,11 +14,14 @@ import com.example.Marketten.dto.temppost.TempPostUpdateRequest;
 import com.example.Marketten.repository.FinalPostRepository;
 import com.example.Marketten.repository.TempPostRepository;
 import com.example.Marketten.repository.UserRepository;
+import com.example.Marketten.util.FastApiClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +31,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     private final TempPostRepository tempPostRepository;
     private final FinalPostRepository finalPostRepository;
     private final UserRepository userRepository;
+    private final FastApiClient fastApiClient;
 
     /** -------------------- 임시 저장글 생성 -------------------- */
     @Override
@@ -63,7 +71,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 KeywordList keyword = KeywordList.builder()
                         .tempPost(temp)
                         .keywordName(k.getKeywordName())
-                        .keywordSearchValue(k.getKeywordSearchValue())
+                        .averageSearchValue(k.getAverageSearchValue())
+                        .peakSearchValue(k.getPeakSearchValue())
                         .build();
                 temp.getKeywordLists().add(keyword);
             });
@@ -120,7 +129,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 KeywordList keyword = KeywordList.builder()
                         .tempPost(temp)
                         .keywordName(k.getKeywordName())
-                        .keywordSearchValue(k.getKeywordSearchValue())
+                        .averageSearchValue(k.getAverageSearchValue())
+                        .peakSearchValue(k.getPeakSearchValue())
                         .build();
                 temp.getKeywordLists().add(keyword);
             });
@@ -142,43 +152,109 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
 
     /** -------------------- Step2 액션 처리 -------------------- */
     @Override
-    public TempPostResponce handleStep2Action(Long inputId, String action, TempPostUpdateRequest request) {
+    public TempPostResponce handleAction(Long inputId, String action, TempPostUpdateRequest request) {
         TempPost temp = tempPostRepository.findById(inputId)
                 .orElseThrow(() -> new RuntimeException("TempPost not found"));
 
+        // ✅ 먼저 TempPost 필드 수정
+        temp.setProductInfo(request.getProductInfo());
+        temp.setProductFeatures(request.getProductFeatures());
+        temp.setUserExperience(request.getUserExperience());
+        temp.setSelectedTone(request.getSelectedTone());
+        temp.setStep(request.getStep());
+        temp.setKeywords(request.getKeywords());
+        temp.setTitleKeywords(request.getTitleKeywords());
+        temp.setGeneratedContent(request.getGeneratedContent());
+        temp.setSelectedTitle(request.getSelectedTitle());
+
+        // ✅ 리스트도 먼저 갱신
+        if (request.getKeywordList() != null) {
+            temp.getKeywordLists().clear();
+            request.getKeywordList().forEach(k -> {
+                KeywordList keyword = KeywordList.builder()
+                        .tempPost(temp)
+                        .keywordName(k.getKeywordName())
+                        .averageSearchValue(k.getAverageSearchValue())
+                        .peakSearchValue(k.getPeakSearchValue())
+                        .build();
+                temp.getKeywordLists().add(keyword);
+            });
+        }
+
+        if (request.getTitleList() != null) {
+            temp.getTitleLists().clear();
+            request.getTitleList().forEach(t -> {
+                TitleList title = TitleList.builder()
+                        .tempPost(temp)
+                        .titleName(t.getTitleName())
+                        .build();
+                temp.getTitleLists().add(title);
+            });
+        }
+
+        // ✅ 수정된 상태를 기반으로 액션 수행
         switch (action) {
-            case "generateContent": // 본문 생성
-            case "regenerate":      // 본문 재생성
-                temp.setGeneratedContent(request.getGeneratedContent());
+            case "generateContent":
+                ContentGenerateRequest contentReq = ContentGenerateRequest.builder()
+                        .productInfo(temp.getProductInfo())
+                        .productFeatures(temp.getProductFeatures())
+                        .userExperience(temp.getUserExperience())
+                        .selectedTone(temp.getSelectedTone())
+                        .tonePreview("PREVIEW")
+                        .keywords(temp.getKeywords())
+                        .build();
+                String generated = fastApiClient.generateContent(contentReq);
+                temp.setGeneratedContent(generated);
                 break;
-            case "analyzeKeywords": // 키워드 분석
-                // KeywordListDTO를 엔티티로 변환해서 갱신
-                if (request.getKeywordList() != null) {
-                    temp.getKeywordLists().clear();
-                    request.getKeywordList().forEach(k -> {
-                        KeywordList keyword = KeywordList.builder()
-                                .tempPost(temp)
-                                .keywordName(k.getKeywordName())
-                                .keywordSearchValue(k.getKeywordSearchValue())
-                                .build();
-                        temp.getKeywordLists().add(keyword);
-                    });
-                }
+
+            case "analyzeKeywords":
+                ContentKeywordRequest keywordReq = ContentKeywordRequest.builder()
+                        .productInfo(temp.getProductInfo())
+                        .productFeatures(temp.getProductFeatures())
+                        .userExperience(temp.getUserExperience())
+                        .build();
+                Map<String, Object> keywordMap = fastApiClient.analyzeContentKeywords(keywordReq);
+                temp.getKeywordLists().clear();
+                keywordMap.forEach((name, statsObj) -> {
+                    Map<String, Object> stats = (Map<String, Object>) statsObj;
+                    Integer average = stats.get("평균 수치") instanceof Number ? ((Number) stats.get("평균 수치")).intValue() : null;
+                    Integer peak = stats.get("최고 수치") instanceof Number ? ((Number) stats.get("최고 수치")).intValue() : null;
+
+                    KeywordList keyword = KeywordList.builder()
+                            .tempPost(temp)
+                            .keywordName(name)
+                            .averageSearchValue(average)
+                            .peakSearchValue(peak)
+                            .build();
+                    temp.getKeywordLists().add(keyword);
+                });
+                temp.setKeywords(request.getKeywords()); // 선택 키워드만 저장
                 break;
-            case "generateTitles":  // 제목 생성
-                // TitleListDTO를 엔티티로 변환해서 갱신
-                if (request.getTitleList() != null) {
-                    temp.getTitleLists().clear();
-                    request.getTitleList().forEach(t -> {
-                        TitleList title = TitleList.builder()
-                                .tempPost(temp)
-                                .titleName(t.getTitleName())
-                                .build();
-                        temp.getTitleLists().add(title);
-                    });
-                }
-                temp.setTitleKeywords(request.getTitleKeywords());
+
+            case "analyzeTitleKeywords":
+                TitleKeywordRequest titleKeywordReq = TitleKeywordRequest.builder()
+                        .generatedContent(temp.getGeneratedContent())
+                        .build();
+                Map<String, Object> titleKeywordMap = fastApiClient.analyzeTitleKeywords(titleKeywordReq);
+                temp.setTitleKeywords(titleKeywordMap.toString());
                 break;
+
+            case "generateTitles":
+                TitleGenerateRequest titleReq = TitleGenerateRequest.builder()
+                        .generatedContent(temp.getGeneratedContent())
+                        .keywords(temp.getKeywords())
+                        .build();
+                Set<String> titles = fastApiClient.generateTitles(titleReq);
+                temp.getTitleLists().clear();
+                titles.forEach(t -> {
+                    TitleList title = TitleList.builder()
+                            .tempPost(temp)
+                            .titleName(t)
+                            .build();
+                    temp.getTitleLists().add(title);
+                });
+                break;
+
             default:
                 throw new IllegalArgumentException("Unsupported action: " + action);
         }
@@ -187,6 +263,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         TempPost saved = tempPostRepository.save(temp);
         return toResponse(saved);
     }
+
+
 
     /** -------------------- 임시 저장글 삭제 -------------------- */
     @Override
@@ -214,7 +292,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                         .keywordId(k.getKeywordId())
                         .tempPostId(temp.getInputId())
                         .keywordName(k.getKeywordName())
-                        .keywordSearchValue(k.getKeywordSearchValue())
+                        .averageSearchValue(k.getAverageSearchValue())
+                        .peakSearchValue(k.getPeakSearchValue())
                         .build())
                 .collect(Collectors.toList());
 

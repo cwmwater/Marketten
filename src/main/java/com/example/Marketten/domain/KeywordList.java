@@ -24,5 +24,9 @@ public class KeywordList {
     @Column(length = 255, nullable = false)
     private String keywordName;
 
-    private Integer keywordSearchValue;
+    // 평균 검색량
+    private Integer averageSearchValue;
+
+    // 최고 검색량
+    private Integer peakSearchValue;
 }

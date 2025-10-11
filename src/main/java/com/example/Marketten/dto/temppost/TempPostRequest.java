@@ -22,7 +22,6 @@ public class TempPostRequest {
 
     // step2: 키워드 선택, 본문 생성
     private String keywords;
-    private String keywordsList;
     private String titleKeywords;
     private String generatedContent;
     private String selectedTitle;

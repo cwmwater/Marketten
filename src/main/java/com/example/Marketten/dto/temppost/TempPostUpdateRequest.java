@@ -21,7 +21,6 @@ public class TempPostUpdateRequest {
     private String userExperience;
 
     private String keywords;
-    private String keywordsList;
     private String titleKeywords;
     private String generatedContent;
     private String selectedTitle;
