@@ -69,7 +69,7 @@ public class CustomSecurityConfig {
         // 1. 요청 경로 권한 설정 (가장 중요: permitAll()을 먼저 선언)
         http.authorizeHttpRequests(auth -> auth
                 // 로그인, 회원가입, 토큰 재발급 등 인증 관련 경로는 모두 허용
-                .requestMatchers("/api/auth/**", "/api/mkt/temp/**", "/api/mkt/post/**", "/api/products/image/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/temp/**", "/api/post/**", "/api/products/image/**").permitAll()
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated());
 

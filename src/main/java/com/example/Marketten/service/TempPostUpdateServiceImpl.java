@@ -132,14 +132,11 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
 
     /** -------------------- 단계별 임시 저장글 조회 -------------------- */
     @Override
-    public TempPostResponce getTempPost(Long inputId, Integer step) {
+    public TempPostResponce getTempPost(Long inputId) {
         TempPost temp = tempPostRepository.findById(inputId)
                 .orElseThrow(() -> new RuntimeException("TempPost not found"));
 
-        if (step != null && !step.equals(temp.getStep())) {
-            throw new RuntimeException("Step mismatch");
-        }
-
+        // step 체크 제거
         return toResponse(temp);
     }
 

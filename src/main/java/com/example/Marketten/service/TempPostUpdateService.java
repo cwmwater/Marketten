@@ -26,7 +26,7 @@ public interface TempPostUpdateService {
     /**
      * 단계별 임시 저장글 조회
      */
-    TempPostResponce getTempPost(Long inputId, Integer step);
+    TempPostResponce getTempPost(Long inputId);
 
     /**
      * 임시 저장글 삭제
