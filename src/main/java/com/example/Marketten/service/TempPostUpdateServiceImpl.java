@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -277,25 +278,29 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     /** -------------------- 엔티티 → DTO 변환 -------------------- */
     private TempPostResponce toResponse(TempPost temp) {
 
-        // TitleListDTO 변환
-        List<TitleListDTO> titles = temp.getTitleLists().stream()
-                .map(t -> TitleListDTO.builder()
-                        .titleId(t.getTitleId())
-                        .tempPostId(temp.getInputId())
-                        .titleName(t.getTitleName())
-                        .build())
-                .collect(Collectors.toList());
+        // TitleListDTO 변환 (null 체크 추가)
+        List<TitleListDTO> titles = temp.getTitleLists() != null ?
+                temp.getTitleLists().stream()
+                        .map(t -> TitleListDTO.builder()
+                                .titleId(t.getTitleId())
+                                .tempPostId(temp.getInputId())
+                                .titleName(t.getTitleName())
+                                .build())
+                        .collect(Collectors.toList())
+                : new ArrayList<>();  // ← null이면 빈 리스트
 
-        // KeywordListDTO 변환
-        List<KeywordListDTO> keywords = temp.getKeywordLists().stream()
-                .map(k -> KeywordListDTO.builder()
-                        .keywordId(k.getKeywordId())
-                        .tempPostId(temp.getInputId())
-                        .keywordName(k.getKeywordName())
-                        .averageSearchValue(k.getAverageSearchValue())
-                        .peakSearchValue(k.getPeakSearchValue())
-                        .build())
-                .collect(Collectors.toList());
+        // KeywordListDTO 변환 (null 체크 추가)
+        List<KeywordListDTO> keywords = temp.getKeywordLists() != null ?
+                temp.getKeywordLists().stream()
+                        .map(k -> KeywordListDTO.builder()
+                                .keywordId(k.getKeywordId())
+                                .tempPostId(temp.getInputId())
+                                .keywordName(k.getKeywordName())
+                                .averageSearchValue(k.getAverageSearchValue())
+                                .peakSearchValue(k.getPeakSearchValue())
+                                .build())
+                        .collect(Collectors.toList())
+                : new ArrayList<>();  // ← null이면 빈 리스트
 
         return TempPostResponce.builder()
                 .inputId(temp.getInputId())

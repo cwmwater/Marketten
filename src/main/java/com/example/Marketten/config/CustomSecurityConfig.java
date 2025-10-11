@@ -62,11 +62,6 @@ public class CustomSecurityConfig {
         // CSRF 비활성화 (CORS는 FilterRegistrationBean에서 처리)
         http.csrf(csrf -> csrf.disable());
 
-        // 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
-        http.exceptionHandling(exceptionHandling -> exceptionHandling
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
-                .accessDeniedHandler(new CustomAccessDeniedHandler())
-        );
 
         // 1. 요청 경로 권한 설정
         http.authorizeHttpRequests(auth -> auth
@@ -74,6 +69,12 @@ public class CustomSecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/temp/**", "/api/posts/**", "/api/products/image/**").permitAll()
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated());
+
+        // 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
+        http.exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                .accessDeniedHandler(new CustomAccessDeniedHandler())
+        );
 
         // 2. JWT 체크 필터 적용
         http.addFilterBefore(
@@ -104,7 +105,7 @@ public class CustomSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("HEAD", "PATCH" ,"GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -42,6 +42,8 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         // 2️⃣ 인증 필요 없는 경로 배열
         String[] excludedPaths = {
                 "/api/auth",
+                "/api/temp",
+                "/api/posts",
                 "/api/products/image",
                 "/oauth2/authorization",
                 "/login/oauth2/code",
