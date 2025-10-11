@@ -57,7 +57,16 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     @Column(name = "clear_post", nullable = false)
     private int clearPost; // 최종 게시물 수
 
-    // --- Setter 메서드 (OAuth2 및 로그인 시점 업데이트를 위해 추가) ---
+    // --- Setter 메서드 (UserServiceImpl에서 사용) ---
+
+    /**
+     * 비밀번호를 업데이트합니다. (비밀번호 수정 로직에서 사용됨)
+     *
+     * @param password 새 암호화된 비밀번호
+     */
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     /**
      * 소셜 프로바이더를 업데이트합니다. (CustomOAuth2UserService에서 사용됨)
@@ -75,6 +84,24 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
      */
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    /**
+     * 닉네임을 업데이트합니다. (UserServiceImpl에서 사용됨)
+     *
+     * @param nickname 새로운 닉네임
+     */
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    /**
+     * 프로필 이미지 URL을 업데이트합니다. (UserServiceImpl에서 사용됨)
+     *
+     * @param imageUrl 새로운 이미지 URL
+     */
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     // --- 비즈니스 로직 메서드 ---

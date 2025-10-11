@@ -72,9 +72,10 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("[JWTCheckFilter] Authorization header missing or malformed. Value: {}", authHeader);
+
+            log.warn("********** JWTCheckFilter - Authorization header missing or malformed. Header Value: {}", authHeader);
             handleAuthError(response);
-            return;
+            return; // ⬅️ 오류 발생 시 여기서 요청 처리를 중단합니다.
         }
 
         String accessToken = authHeader.substring(7);
@@ -85,7 +86,15 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             String email = (String) claims.get("email");
             Optional<User> result = userRepository.findByEmail(email);
-            User user = result.orElseThrow(() -> new RuntimeException("User not found by JWT email: " + email));
+
+            // 🚨 사용자가 존재하지 않으면 401 응답을 보내고 즉시 중단합니다.
+            if (result.isEmpty()) {
+                log.warn("User not found in DB with email: {}", email);
+                handleAuthError(response);
+                return; // ⬅️ 즉시 중단
+            }
+
+            User user = result.get();
 
             CustomUserDetails userDetails = new CustomUserDetails(user);
             UsernamePasswordAuthenticationToken authenticationToken =
@@ -93,14 +102,18 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response); // 다음 필터 체인으로 진행 (이후 필터가 간섭하지 않도록 처리)
 
         } catch (CustomJWTException e) {
-            log.warn("[JWTCheckFilter] JWT 검증 실패: {}", e.getMessage());
+            // 토큰 만료/변조 시 401 응답 후 중단
+            log.warn("JWT validation failed: {}", e.getMessage());
             handleAuthError(response);
-        } catch (RuntimeException e) {
-            log.error("[JWTCheckFilter] 사용자 정보 로드 실패: {}", e.getMessage());
+            return; // ⬅️ 오류 발생 시 여기서 중단합니다.
+        } catch (Exception e) {
+            // 기타 예상치 못한 오류 시 401 응답 후 중단
+            log.error("Unexpected error during JWT processing: {}", e.getMessage());
             handleAuthError(response);
+            return; // ⬅️ 오류 발생 시 여기서 중단합니다.
         }
     }
 

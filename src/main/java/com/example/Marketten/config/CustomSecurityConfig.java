@@ -15,11 +15,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer; // ✨ 임포트 추가
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -60,21 +62,30 @@ public class CustomSecurityConfig {
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // CSRF 비활성화 (CORS는 FilterRegistrationBean에서 처리)
-        http.csrf(csrf -> csrf.disable());
+        http.csrf(AbstractHttpConfigurer::disable);
 
+        // ✨ 익명 사용자 인증 필터 비활성화 (CustomUserDetails 덮어쓰기 방지)
+        http.anonymous(AbstractHttpConfigurer::disable);
 
-        // 1. 요청 경로 권한 설정
-        http.authorizeHttpRequests(auth -> auth
-                // permitAll: 모든 사용자 접근 가능 (토큰 불필요)
-                .requestMatchers("/api/auth/**", "/api/temp/**", "/api/posts/**", "/api/products/image/**").permitAll()
-                // 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated());
 
         // 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
         http.exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
                 .accessDeniedHandler(new CustomAccessDeniedHandler())
         );
+
+        // 1. 요청 경로 권한 설정 (permitAll()을 먼저 선언)
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        AntPathRequestMatcher.antMatcher("/api/auth/**"),
+                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
+                        AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"),
+                        AntPathRequestMatcher.antMatcher("/api/temp/**"),
+                        AntPathRequestMatcher.antMatcher("/api/posts/**"),
+                        AntPathRequestMatcher.antMatcher("/api/products/image/**"),
+                        AntPathRequestMatcher.antMatcher("/**")
+                ).permitAll()
+                .anyRequest().authenticated());
 
         // 2. JWT 체크 필터 적용
         http.addFilterBefore(
