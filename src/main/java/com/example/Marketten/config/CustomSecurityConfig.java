@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer; // ✨ 임포트 추가
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -58,7 +59,10 @@ public class CustomSecurityConfig {
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // CSRF 비활성화 (CORS는 FilterRegistrationBean에서 처리)
-        http.csrf(csrf -> csrf.disable());
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        // ✨ 익명 사용자 인증 필터 비활성화 (CustomUserDetails 덮어쓰기 방지)
+        http.anonymous(AbstractHttpConfigurer::disable);
 
         // 🚨 인증/인가 실패 핸들러 설정: 401/403 JSON 응답 강제
         http.exceptionHandling(exceptionHandling -> exceptionHandling
@@ -66,19 +70,17 @@ public class CustomSecurityConfig {
                 .accessDeniedHandler(new CustomAccessDeniedHandler())
         );
 
-        // 1. 요청 경로 권한 설정 (가장 중요: permitAll()을 먼저 선언)
+        // 1. 요청 경로 권한 설정 (permitAll()을 먼저 선언)
         http.authorizeHttpRequests(auth -> auth
-                // permitAll() 경로를 배열 형태로 선언하여 최우선으로 허용합니다.
                 .requestMatchers(
                         AntPathRequestMatcher.antMatcher("/api/auth/**"),
                         AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
-                        AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"), // OAuth2 콜백 경로
+                        AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"),
                         AntPathRequestMatcher.antMatcher("/api/mkt/v1/temp/**"),
                         AntPathRequestMatcher.antMatcher("/api/mkt/v1/post/**"),
                         AntPathRequestMatcher.antMatcher("/api/products/image/**"),
-                        AntPathRequestMatcher.antMatcher("/**") // 기본 경로 및 모든 정적 파일 허용
+                        AntPathRequestMatcher.antMatcher("/**")
                 ).permitAll()
-                // 그 외 모든 요청은 JWT 또는 OAuth2 인증이 필요
                 .anyRequest().authenticated());
 
         // 2. JWT 체크 필터 적용

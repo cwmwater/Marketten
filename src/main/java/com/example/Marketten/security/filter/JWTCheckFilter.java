@@ -30,8 +30,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
     /**
      * 필터링을 건너뛸지 여부를 결정합니다.
-     *
-     * @return true: 필터링 건너뜀 (doFilterInternal 실행 안 함), false: 필터링 진행 (doFilterInternal 실행)
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
@@ -50,7 +48,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             return true;
         }
 
-        // ✨ 소셜 로그인 관련 경로 추가: 토큰 검증 면제
+        // 소셜 로그인 관련 경로 추가: 토큰 검증 면제
         if (requestURI.startsWith("/oauth2/authorization/") ||
                 requestURI.startsWith("/login/oauth2/code/")) {
             log.info("******* JWTCheckFilter - shouldNotFilter : Path OAuth2 matched -> True (Permitted Path)");
@@ -82,9 +80,9 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
         // Bearer 토큰 형식 체크
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("********** JWTCheckFilter - Authorization header missing or malformed. Header Value: {}", authHeader); // 💥 어떤 값이 들어왔는지 로그 남기기
+            log.warn("********** JWTCheckFilter - Authorization header missing or malformed. Header Value: {}", authHeader);
             handleAuthError(response);
-            return;
+            return; // ⬅️ 오류 발생 시 여기서 요청 처리를 중단합니다.
         }
 
         String accessToken = authHeader.substring(7); // access token 추출
@@ -99,8 +97,14 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             // 2. 이메일로 DB에서 사용자 정보 조회
             Optional<User> result = userRepository.findByEmail(email);
 
-            // 사용자 정보가 DB에 없으면 예외 처리
-            User user = result.orElseThrow(() -> new RuntimeException("User not found by JWT email: " + email));
+            // 🚨 사용자가 존재하지 않으면 401 응답을 보내고 즉시 중단합니다.
+            if (result.isEmpty()) {
+                log.warn("User not found in DB with email: {}", email);
+                handleAuthError(response);
+                return; // ⬅️ 즉시 중단
+            }
+
+            User user = result.get();
 
             // 3. 시큐리티용 사용자 정보 객체로 변환
             CustomUserDetails userDetails = new CustomUserDetails(user);
@@ -112,14 +116,18 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             // 5. 시큐리티 컨텍스트에 추가
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-            filterChain.doFilter(request, response); // 다음 필터 체인으로 진행
+            filterChain.doFilter(request, response); // 다음 필터 체인으로 진행 (이후 필터가 간섭하지 않도록 처리)
 
         } catch (CustomJWTException e) {
-            log.warn("JWT 검증 실패 - error message : {}", e.getMessage());
+            // 토큰 만료/변조 시 401 응답 후 중단
+            log.warn("JWT validation failed: {}", e.getMessage());
             handleAuthError(response);
-        } catch (RuntimeException e) {
-            log.error("사용자 정보 로드 실패: {}", e.getMessage());
+            return; // ⬅️ 오류 발생 시 여기서 중단합니다.
+        } catch (Exception e) {
+            // 기타 예상치 못한 오류 시 401 응답 후 중단
+            log.error("Unexpected error during JWT processing: {}", e.getMessage());
             handleAuthError(response);
+            return; // ⬅️ 오류 발생 시 여기서 중단합니다.
         }
     }//doFilterInternal
 
@@ -134,4 +142,4 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         writer.println(new Gson().toJson(Map.of("error", "ERROR_ACCESS_TOKEN", "message", "Invalid or expired token")));
     }
 
-}//class
+}
