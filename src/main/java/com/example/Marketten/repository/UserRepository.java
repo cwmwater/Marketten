@@ -3,6 +3,7 @@ package com.example.Marketten.repository;
 import com.example.Marketten.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime; // ✨ import 추가
 import java.util.Optional;
 
 // JpaRepository를 상속받아 기본적인 CRUD 기능을 사용합니다.
@@ -16,4 +17,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 닉네임 중복 체크를 위한 메서드 정의
     boolean existsByNickname(String nickname);
+
+    /**
+     * 특정 시간 이후에 마지막으로 로그인한 사용자 수를 계산합니다.
+     *
+     * @param dateTime 기준 시간
+     * @return 사용자 수
+     */
+    long countByLastLoginAtAfter(LocalDateTime dateTime);
 }
