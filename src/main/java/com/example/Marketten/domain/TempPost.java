@@ -46,8 +46,6 @@ public class TempPost {
     @Column(length = 5000)
     private String generatedContent; // 생성 글
 
-    @Column(length = 255)
-    private String selectedTitle; //생성 제목
 
     private LocalDateTime updatedAt = LocalDateTime.now(); // 수정 일시
 
