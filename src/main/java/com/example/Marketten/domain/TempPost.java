@@ -20,6 +20,10 @@ public class TempPost {
     private Long inputId; //임시 저장 고유 아이디
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // 작성자 정보 FK
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private FinalPost post; //최종 글 아이디 FK
 
