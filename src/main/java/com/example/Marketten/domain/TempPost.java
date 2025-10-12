@@ -46,7 +46,6 @@ public class TempPost {
     @Column(length = 5000)
     private String generatedContent; // 생성 글
 
-
     private LocalDateTime updatedAt = LocalDateTime.now(); // 수정 일시
 
     // TempPost 삭제 시 관련 제목 리스트도 삭제
