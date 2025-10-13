@@ -50,6 +50,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
 
         TempPost temp = TempPost.builder()
                 .post(post)
+                .user(user)
                 .productInfo(request.getProductInfo())
                 .productFeatures(request.getProductFeatures())
                 .userExperience(request.getUserExperience())

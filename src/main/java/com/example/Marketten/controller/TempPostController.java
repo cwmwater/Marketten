@@ -20,8 +20,13 @@ public class TempPostController {
      */
     @PostMapping("/")
     public ResponseEntity<TempPostResponce> createTempPost(
-            @RequestBody TempPostRequest request,
+            @RequestBody(required = false) TempPostRequest request,
             @RequestHeader("email") String userEmail) {
+
+        // request가 null이면 빈 객체로 생성
+        if (request == null) {
+            request = TempPostRequest.builder().build();
+        }
 
         TempPostResponce response = tempPostService.createTempPost(request, userEmail);
         return ResponseEntity.ok(response);
