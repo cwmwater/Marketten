@@ -101,3 +101,9 @@ server:
   servlet:
     session:
       tracking-modes: cookie
+
+# FastAPI 서버 설정
+fastapi:
+  server:
+    url: http://127.0.0.1:8000
+    api-key: our-super-secret-key-for-fastapi-12345

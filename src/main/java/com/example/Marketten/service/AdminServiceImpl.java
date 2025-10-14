@@ -9,6 +9,9 @@ import com.example.Marketten.dto.user.UserResponse;
 import com.example.Marketten.repository.FinalPostRepository;
 import com.example.Marketten.repository.TempPostRepository;
 import com.example.Marketten.repository.UserRepository;
+import com.example.Marketten.domain.SiteConfig;
+import com.example.Marketten.dto.admin.CommonConfigRequestDTO;
+import com.example.Marketten.repository.SiteConfigRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,7 +20,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
 
+
+import java.util.Map;
 import com.example.Marketten.dto.admin.VisitorStatsDTO;
 import com.example.Marketten.repository.VisitorLogRepository;
 import java.time.LocalDate;
@@ -35,7 +43,14 @@ public class AdminServiceImpl implements AdminService {
     private final FinalPostRepository finalPostRepository;
     private final TempPostRepository tempPostRepository;
     private final VisitorLogRepository visitorLogRepository;
+    private final SiteConfigRepository siteConfigRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${fastapi.server.url}")
+    private String fastapiUrl;
+
+    @Value("${fastapi.server.api-key}")
+    private String fastapiApiKey;
 
     /**
      * 사용자 리스트 조회 로직 (기존과 동일)
@@ -185,5 +200,71 @@ public class AdminServiceImpl implements AdminService {
         admin.setPassword(passwordEncoder.encode(newPassword));
         // @Transactional에 의해 메서드 종료 시 자동으로 DB에 업데이트됩니다. (Dirty Checking)
         log.info("Admin password updated successfully for UserID: {}", adminId);
+    }
+
+    @Override
+    public void updateGptModel(String modelName) {
+        log.info("Sending request to FastAPI server to update model to: {}", modelName);
+
+        // 1. HTTP 요청을 보내기 위한 객체 생성
+        RestTemplate restTemplate = new RestTemplate();
+
+        // 2. HTTP 헤더 설정 (Content-Type, API Key)
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", fastapiApiKey);
+
+        // 3. HTTP 바디 설정 (JSON 형식)
+        Map<String, String> requestBody = Map.of("model_name", modelName);
+
+        // 4. 헤더와 바디를 합쳐서 요청 객체 생성
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            // 5. FastAPI 서버에 PUT 요청 보내기
+            // 예: http://127.0.0.1:8000/config/model 로 요청
+            ResponseEntity<String> response = restTemplate.exchange(
+                    fastapiUrl + "/config/model", // 동료와 약속한 경로
+                    HttpMethod.PUT,
+                    requestEntity,
+                    String.class
+            );
+
+            // 6. 응답 확인 (선택 사항)
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Successfully updated model on FastAPI server.");
+            } else {
+                log.error("Failed to update model on FastAPI server. Status: {}", response.getStatusCode());
+                throw new RuntimeException("FastAPI 서버 모델 변경에 실패했습니다.");
+            }
+        } catch (Exception e) {
+            log.error("Error while communicating with FastAPI server", e);
+            throw new RuntimeException("FastAPI 서버와 통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Override
+    public void updateCommonConfig(CommonConfigRequestDTO request) {
+        // DTO에 담겨온 각 값을 해당하는 Key를 찾아 DB에 업데이트합니다.
+        updateConfigValue("HEADER_TEXT", request.getHeaderText());
+        updateConfigValue("FOOTER_TEXT", request.getFooterText());
+        updateConfigValue("BANNER_IMAGE_URL", request.getBannerImageUrl());
+        log.info("Common site configurations have been updated.");
+    }
+
+    /**
+     * 특정 설정 키(Key)의 값(Value)을 업데이트하는 헬퍼 메서드
+     */
+    private void updateConfigValue(String key, String value) {
+        // 요청 DTO에 값이 없는(null) 필드는 업데이트하지 않고 건너뜁니다.
+        if (value == null) {
+            return;
+        }
+
+        SiteConfig config = siteConfigRepository.findById(key)
+                .orElseThrow(() -> new IllegalArgumentException("설정 키를 찾을 수 없습니다: " + key));
+
+        config.updateValue(value);
+        // @Transactional에 의해 메서드 종료 시 자동으로 DB에 저장됩니다.
     }
 }

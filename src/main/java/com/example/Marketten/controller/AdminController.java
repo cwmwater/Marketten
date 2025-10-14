@@ -94,12 +94,12 @@ public class AdminController {
     }
 
     /**
-     * 모델 및 톤 관리 API
+     * 5. GPT 모델 변경 API
      */
     @PatchMapping("/model")
-    public ResponseEntity<Void> updateGPTModel(@RequestBody String modelName) {
-        log.info("Request to update GPT Model to: {}", modelName);
-        // adminService.updateGPTModel(modelName);
+    public ResponseEntity<Void> updateGPTModel(@RequestBody ModelUpdateRequestDTO request) {
+        log.info("Request to update GPT Model to: {}", request.getModelName());
+        adminService.updateGptModel(request.getModelName());
         return ResponseEntity.ok().build();
     }
 
@@ -134,6 +134,16 @@ public class AdminController {
                 currentUser.getUsername() // CustomUserDetails에서 이메일(username)을 가져옴
         );
 
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 사이트 공통 설정(헤더, 푸터, 배너) 수정
+     * 경로: PATCH /api/admin/common
+     */
+    @PatchMapping("/common")
+    public ResponseEntity<Void> updateCommonConfig(@RequestBody CommonConfigRequestDTO request) {
+        adminService.updateCommonConfig(request);
         return ResponseEntity.ok().build();
     }
 

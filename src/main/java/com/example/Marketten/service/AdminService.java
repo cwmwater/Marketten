@@ -1,10 +1,7 @@
 package com.example.Marketten.service;
 
 import com.example.Marketten.domain.Role;
-import com.example.Marketten.dto.admin.AdminDashboardDTO;
-import com.example.Marketten.dto.admin.AdminUserDetailDTO;
-import com.example.Marketten.dto.admin.AdminUserListResponse;
-import com.example.Marketten.dto.admin.VisitorStatsDTO;
+import com.example.Marketten.dto.admin.*;
 
 public interface AdminService {
 
@@ -57,4 +54,8 @@ public interface AdminService {
      * @param currentAdminEmail 현재 로그인된 관리자의 이메일 (보안 검증용)
      */
     void updateAdminPassword(Long adminId, String currentPassword, String newPassword, String currentAdminEmail);
+
+    void updateGptModel(String modelName);
+
+    void updateCommonConfig(CommonConfigRequestDTO request);
 }
