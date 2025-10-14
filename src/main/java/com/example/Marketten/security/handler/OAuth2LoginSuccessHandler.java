@@ -63,7 +63,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             response.addHeader(jwtUtil.getRefreshHeader(), "Bearer " + refreshToken);
 
             // 임시 리다이렉트
-            response.sendRedirect("http://localhost:8080/"); // 프론트엔드 주소로 변경 필요
+            response.sendRedirect("http://localhost:5173/"); // 프론트엔드 주소로 변경 필요
 
         } catch (Exception e) {
             log.error("OAuth2LoginSuccessHandler Error: ", e);
