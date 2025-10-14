@@ -56,11 +56,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String accessToken = jwtUtil.generateAccessToken(email);
 
             // 3. Refresh Token 조회
-            String refreshToken = loginService.getRefreshTokenByEmail(email);
+           // String refreshToken = loginService.getRefreshTokenByEmail(email);
 
             // 토큰 헤더에 추가
             response.addHeader(jwtUtil.getAccessHeader(), "Bearer " + accessToken);
-            response.addHeader(jwtUtil.getRefreshHeader(), "Bearer " + refreshToken);
+           // response.addHeader(jwtUtil.getRefreshHeader(), "Bearer " + refreshToken);
 
             // 임시 리다이렉트
             response.sendRedirect("http://localhost:5173/"); // 프론트엔드 주소로 변경 필요
