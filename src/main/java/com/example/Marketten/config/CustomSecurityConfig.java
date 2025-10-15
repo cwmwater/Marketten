@@ -85,8 +85,8 @@ public class CustomSecurityConfig {
                         AntPathRequestMatcher.antMatcher("/api/auth/**"),
                         AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
                         AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"),
-                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/temp/**"),
-                        AntPathRequestMatcher.antMatcher("/api/mkt/v1/post/**"),
+                        AntPathRequestMatcher.antMatcher("/api/temp/**"),
+                        AntPathRequestMatcher.antMatcher("/api/posts/**"),
                         AntPathRequestMatcher.antMatcher("/api/products/image/**"),
                         AntPathRequestMatcher.antMatcher("/**")
                 ).permitAll()
@@ -118,7 +118,7 @@ public class CustomSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST","PATCH","PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type","email"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

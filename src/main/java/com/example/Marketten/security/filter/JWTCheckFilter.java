@@ -61,8 +61,8 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             log.info("******* JWTCheckFilter - shouldNotFilter : Path /api/products/image/ matched -> True");
             return true;
         }
-        if (requestURI.startsWith("/api/mkt/v1/temp/")) return true;
-        if (requestURI.startsWith("/api/mkt/v1/post/")) return true;
+        if (requestURI.startsWith("/api/temp/")) return true;
+        if (requestURI.startsWith("/api/posts/")) return true;
 
         log.info("******* JWTCheckFilter - shouldNotFilter : No path matched -> False (Filtering required)");
         return false; // 나머지는 필터링해~
