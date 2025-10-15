@@ -39,4 +39,13 @@ public interface UserService {
      * @param email 탈퇴할 사용자의 이메일
      */
     void withdrawUser(String email);
+
+
+    /**
+     * 이메일 기반 비밀번호 재설정 (기존 비밀번호 확인 없이 새 비밀번호 설정)
+     *
+     * @param email   비밀번호를 재설정할 사용자의 이메일
+     * @param newPassword 새 비밀번호
+     */
+    public void resetPasswordByEmail(String email, String newPassword);
 }
