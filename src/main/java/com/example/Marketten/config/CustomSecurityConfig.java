@@ -73,7 +73,6 @@ public class CustomSecurityConfig {
 
         Supplier<LoginService> loginServiceSupplier = () -> applicationContext.getBean(LoginService.class);
 
-        // OAuth2LoginSuccessHandler 생성자에 visitorLogRepository를 전달
         OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler = new OAuth2LoginSuccessHandler(
                 jwtUtil,
                 loginServiceSupplier,
@@ -82,13 +81,22 @@ public class CustomSecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
+                        // =========================================================================
+                        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+                        // =========================================================================
+                        // ✨ Spring Boot의 기본 에러 페이지 경로(/error)를 인증 없이 허용합니다.
+                        // 이 규칙이 없으면, 다른 에러 발생 시 이중으로 보안 에러가 발생합니다.
+                        AntPathRequestMatcher.antMatcher("/error"),
+                        // =========================================================================
+                        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+                        // =========================================================================
+                        AntPathRequestMatcher.antMatcher("/images/**"),
                         AntPathRequestMatcher.antMatcher("/api/auth/**"),
                         AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
                         AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"),
                         AntPathRequestMatcher.antMatcher("/api/temp/**"),
                         AntPathRequestMatcher.antMatcher("/api/posts/**"),
-                        AntPathRequestMatcher.antMatcher("/api/products/image/**"),
-                        AntPathRequestMatcher.antMatcher("/**")
+                        AntPathRequestMatcher.antMatcher("/api/products/image/**")
                 ).permitAll()
                 .anyRequest().authenticated());
 
@@ -98,7 +106,7 @@ public class CustomSecurityConfig {
         );
 
         http.oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2LoginSuccessHandler) // 수정된 핸들러를 사용
+                .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler(oAuth2LoginFailureHandler)
                 .userInfoEndpoint(userInfo ->
                         userInfo.userService(customOAuth2UserService)
@@ -117,8 +125,8 @@ public class CustomSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST","PATCH","PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type","email"));
+        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "email"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

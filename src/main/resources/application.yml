@@ -107,3 +107,14 @@ fastapi:
   server:
     url: http://127.0.0.1:8000
     api-key: our-super-secret-key-for-fastapi-12345
+
+app:
+  base-url: http://localhost:8080
+
+# 파일 업로드 설정
+file:
+  upload:
+    # 1. 파일이 실제로 저장될 서버의 절대 경로 (폴더 끝에 '/' 포함)
+    path: C:/marketten/uploads/
+    # 2. 브라우저가 이 파일들에 접근할 때 사용할 URL 앞부분
+    url-prefix: /images/
