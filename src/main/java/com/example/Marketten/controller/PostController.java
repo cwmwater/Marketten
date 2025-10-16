@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/posts")
@@ -36,5 +38,12 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
         postCreateService.deletePost(postId);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/user")
+    public ResponseEntity<List<PostResponse>> getPostsByUserEmail(@RequestParam String email) {
+        List<PostResponse> responses = postCreateService.getPostsByEmail(email);
+        return ResponseEntity.ok(responses);
     }
 }

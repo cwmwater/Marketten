@@ -5,6 +5,8 @@ import com.example.Marketten.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface FinalPostRepository extends JpaRepository<FinalPost, Long> {
 
@@ -17,4 +19,7 @@ public interface FinalPostRepository extends JpaRepository<FinalPost, Long> {
     long countByStatus(String status);
 
     long countByUser(User user);
+
+
+    List<FinalPost> findByUser(User user);
 }

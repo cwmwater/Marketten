@@ -4,6 +4,8 @@ import com.example.Marketten.dto.post.PostRequest;
 import com.example.Marketten.dto.post.PostResponse;
 import com.example.Marketten.dto.post.PostUpdateRequest;
 
+import java.util.List;
+
 public interface PostCreateService {
 
 
@@ -15,5 +17,8 @@ public interface PostCreateService {
 
     // 게시글 조회: postId에 해당하는 게시글 정보를 반환
     PostResponse getPost(Long postId);
+
+    // 보관함 글 리스트 조회
+    List<PostResponse> getPostsByEmail(String email);
 
 }
