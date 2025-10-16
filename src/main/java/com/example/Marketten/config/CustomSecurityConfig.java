@@ -81,15 +81,10 @@ public class CustomSecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        // =========================================================================
-                        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-                        // =========================================================================
                         // ✨ Spring Boot의 기본 에러 페이지 경로(/error)를 인증 없이 허용합니다.
                         // 이 규칙이 없으면, 다른 에러 발생 시 이중으로 보안 에러가 발생합니다.
+                        AntPathRequestMatcher.antMatcher("/favicon.ico"),
                         AntPathRequestMatcher.antMatcher("/error"),
-                        // =========================================================================
-                        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-                        // =========================================================================
                         AntPathRequestMatcher.antMatcher("/images/**"),
                         AntPathRequestMatcher.antMatcher("/api/auth/**"),
                         AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),

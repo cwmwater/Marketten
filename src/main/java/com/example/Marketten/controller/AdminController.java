@@ -1,5 +1,6 @@
 package com.example.Marketten.controller;
 
+import com.example.Marketten.domain.Role;
 import com.example.Marketten.dto.admin.*;
 import com.example.Marketten.security.CustomUserDetails;
 import com.example.Marketten.service.AdminService;
@@ -26,10 +27,11 @@ public class AdminController {
     @GetMapping("/users/{page}/{size}")
     public ResponseEntity<AdminUserListResponse> getUserList(
             @PathVariable int page,
-            @PathVariable int size) {
+            @PathVariable int size,
+            @RequestParam Role role) {
 
-        log.info("Request to get user list: Page={}, Size={}", page, size);
-        AdminUserListResponse response = adminService.getUserList(page, size);
+        log.info("Request to get user list: Page={}, Size={}, Role={}", page, size, role);
+        AdminUserListResponse response = adminService.getUserList(page, size, role);
         return ResponseEntity.ok(response);
     }
 

@@ -8,7 +8,7 @@ public interface AdminService {
     /**
      * 사용자 리스트를 페이징 처리하여 조회합니다.
      */
-    AdminUserListResponse getUserList(int page, int size);
+    AdminUserListResponse getUserList(int page, int size, Role role);
 
     /**
      * 특정 사용자의 권한(Role)을 수정합니다.

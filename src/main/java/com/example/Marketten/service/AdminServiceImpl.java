@@ -1,6 +1,7 @@
 package com.example.Marketten.service;
 
 import com.example.Marketten.domain.Role;
+import com.example.Marketten.domain.Status;
 import com.example.Marketten.domain.User;
 import com.example.Marketten.dto.admin.AdminDashboardDTO;
 import com.example.Marketten.dto.admin.AdminUserListResponse;
@@ -57,12 +58,18 @@ public class AdminServiceImpl implements AdminService {
      */
     @Override
     @Transactional(readOnly = true)
-    public AdminUserListResponse getUserList(int page, int size) {
+    // ✨ role 파라미터 추가
+    public AdminUserListResponse getUserList(int page, int size, Role role) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<User> userPage = userRepository.findAll(pageable);
+
+        // ✨ findAll 대신 findByRoleAndStatus를 사용하여 필터링
+        // (탈퇴하지 않은 ACTIVE 상태의 사용자 중에서 특정 role을 가진 사람만 조회)
+        Page<User> userPage = userRepository.findByRoleAndStatus(role, Status.ACTIVE, pageable);
+
         List<UserResponse> userList = userPage.getContent().stream()
                 .map(UserResponse::from)
                 .collect(Collectors.toList());
+
         return AdminUserListResponse.builder()
                 .userList(userList)
                 .currentPage(userPage.getNumber())

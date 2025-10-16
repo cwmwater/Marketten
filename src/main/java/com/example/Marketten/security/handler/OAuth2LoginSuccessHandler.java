@@ -7,6 +7,7 @@ import com.example.Marketten.oauth2.CustomOAuth2User;
 import com.example.Marketten.repository.VisitorLogRepository;
 import com.example.Marketten.service.LoginService;
 import com.example.Marketten.util.JWTUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +25,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final Supplier<LoginService> loginServiceSupplier;
     private final VisitorLogRepository visitorLogRepository;
 
-    /**
-     * 생성자: 모든 의존성을 수동으로 주입받습니다.
-     */
     public OAuth2LoginSuccessHandler(JWTUtil jwtUtil, Supplier<LoginService> loginServiceSupplier, VisitorLogRepository visitorLogRepository) {
         this.jwtUtil = jwtUtil;
         this.loginServiceSupplier = loginServiceSupplier;
         this.visitorLogRepository = visitorLogRepository;
-        log.info("OAuth2LoginSuccessHandler initialized with LoginService Supplier and VisitorLogRepository.");
     }
 
     @Override
@@ -44,11 +41,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         try {
             User user = loginService.getUserByEmail(email);
 
-            // ✨ [가장 중요한 수정] 소셜 로그인 시에도 사용자의 상태를 확인합니다.
             if (user.getStatus() != Status.ACTIVE) {
-                log.warn("Social login failed for non-active user: {}", email);
-                // 여기에 프론트엔드의 에러 페이지로 리다이렉트하는 로직을 넣으면 더 좋습니다.
-                response.sendRedirect("/login?error=account_inactive");
+                // ... (상태 확인 및 에러 리다이렉트 로직은 동일)
+                response.sendRedirect("http://localhost:5173/login?error=account_inactive");
                 return;
             }
 
@@ -60,7 +55,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .build();
             visitorLogRepository.save(log);
 
-            // ... (이하 토큰 발급 및 리다이렉트 로직)
+            String accessToken = jwtUtil.generateAccessToken(email);
+            // Refresh Token은 쿠키로 전달하기에는 너무 길고 중요하므로,
+            // 필요하다면 별도의 API를 통해 가져오게 하는 것이 더 안전
+
+            Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+            accessTokenCookie.setPath("/"); // "/" 경로 이하 모든 페이지에서 쿠키 접근 가능
+            accessTokenCookie.setMaxAge(60); // 쿠키 유효 시간 (초 단위, 예: 60초)
+            // accessTokenCookie.setHttpOnly(true); // HttpOnly를 true로 하면 JS에서 접근 불가하므로, 여기서는 false(기본값)로 둡니다.
+
+            response.addCookie(accessTokenCookie);
+
+            response.sendRedirect("http://localhost:5173");
+
         } catch (Exception e) {
             log.error("OAuth2LoginSuccessHandler Error: ", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "OAuth2 로그인 처리 실패");
