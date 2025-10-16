@@ -16,13 +16,6 @@ public interface AdminService {
     void updateUserRole(Long userId, Role newRole);
 
     /**
-     * 관리자 대시보드에 필요한 통계 데이터를 조회합니다.
-     *
-     * @return AdminDashboardDTO (전체 사용자 수, 게시글 수 등)
-     */
-    AdminDashboardDTO getDashboardStats();
-
-    /**
      * 특정 사용자의 상세 정보를 조회합니다.
      *
      * @param userId 조회할 사용자의 고유 ID
@@ -30,10 +23,6 @@ public interface AdminService {
      */
     AdminUserDetailDTO getUserDetail(Long userId);
 
-    /**
-     * 방문자 수를 보여줍니다.
-     */
-    VisitorStatsDTO getVisitorStats();
 
     /**
      * 전체 임시 저장 글의 수를 조회합니다.
@@ -58,4 +47,10 @@ public interface AdminService {
     void updateGptModel(String modelName);
 
     void updateCommonConfig(CommonConfigRequestDTO request);
+
+    // 대시보드 차트 통계 조회 메서드 추가
+    AdminDashboardStatsDTO getDashboardChartStats();
+
+    // ✨ 리포트 요약 통계 조회 메서드 추가
+    ReportSummaryDTO getReportSummary();
 }

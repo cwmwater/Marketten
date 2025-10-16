@@ -85,14 +85,21 @@ public class AdminController {
     }
 
     /**
-     * 대시보드 통계 정보 조회 API
+     * 대시보드 차트에 필요한 모든 통계 데이터를 조회합니다.
      * 경로: GET /api/admin
      */
     @GetMapping
-    public ResponseEntity<AdminDashboardDTO> getDashboardStats() {
-        log.info("Request to get dashboard statistics.");
-        AdminDashboardDTO dashboardData = adminService.getDashboardStats();
-        return ResponseEntity.ok(dashboardData);
+    public ResponseEntity<AdminDashboardStatsDTO> getDashboardChartStats() {
+        log.info("Request to get dashboard chart statistics.");
+        AdminDashboardStatsDTO response = adminService.getDashboardChartStats();
+        return ResponseEntity.ok(response);
+    }
+
+    // 리포트 요약 데이터 조회 API
+    @GetMapping("/visitors")
+    public ResponseEntity<ReportSummaryDTO> getReportSummary() {
+        ReportSummaryDTO response = adminService.getReportSummary();
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -105,16 +112,6 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 방문자 통계 (일/월/년) 조회
-     * 경로: GET /api/admin/visitors
-     */
-    @GetMapping("/visitors")
-    public ResponseEntity<VisitorStatsDTO> getVisitorStats() {
-        log.info("Request to get visitor statistics.");
-        VisitorStatsDTO response = adminService.getVisitorStats();
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * 관리자 자신의 비밀번호 변경

@@ -13,6 +13,7 @@ import java.util.Optional;
 // JpaRepository를 상속받아 기본적인 CRUD 기능을 사용합니다.
 public interface UserRepository extends JpaRepository<User, Long> {
 
+
     // ✨ 특정 역할(Role)과 상태(Status)를 가진 사용자만 페이징하여 조회하는 메서드
     Page<User> findByRoleAndStatus(Role role, Status status, Pageable pageable);
 
@@ -32,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 사용자 수
      */
     long countByLastLoginAtAfter(LocalDateTime dateTime);
+
+    long countByStatus(Status status);
 }

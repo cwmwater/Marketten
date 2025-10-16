@@ -21,4 +21,12 @@ public interface VisitorLogRepository extends JpaRepository<VisitorLog, Long> {
     // vl.visitor.id 와 vl.visitDate 로 필드명을 수정했습니다.
     @Query("SELECT COUNT(DISTINCT vl.visitor.userId) FROM VisitorLog vl WHERE vl.visitDate BETWEEN :start AND :end")
     long countDistinctVisitorByVisitDateBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // 특정 기간 동안의 순 방문자 수를 계산합니다.
+    @Query("SELECT COUNT(DISTINCT vl.visitor.userId) FROM VisitorLog vl WHERE vl.visitDate BETWEEN :start AND :end")
+    long countDistinctUserByVisitDateBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // ✨ 전체 기간에 대한 순 방문자 수를 계산합니다.
+    @Query("SELECT COUNT(DISTINCT vl.visitor.userId) FROM VisitorLog vl")
+    long countDistinctVisitor();
 }
