@@ -2,7 +2,8 @@ package com.example.Marketten.service;
 
 import com.example.Marketten.domain.RefreshToken;
 import com.example.Marketten.domain.User;
-import com.example.Marketten.domain.VisitorLog; // ✨ import 추가
+import com.example.Marketten.domain.Status;
+import com.example.Marketten.domain.VisitorLog;
 import com.example.Marketten.dto.login.LoginRequest;
 import com.example.Marketten.dto.auth.TokenInfo;
 import com.example.Marketten.dto.auth.TokenRefreshRequest;
@@ -39,6 +40,19 @@ public class LoginServiceImpl implements LoginService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
+
+        // 사용자의 상태(status)를 상세하게 확인하여 구체적인 에러 메시지를 반환합니다.
+        if (user.getStatus() == Status.DEACTIVATED) {
+            log.warn("Login failed for deactivated user: {}", request.getEmail());
+            throw new IllegalArgumentException("이미 탈퇴 처리된 계정입니다.");
+        } else if (user.getStatus() == Status.SUSPENDED) {
+            log.warn("Login failed for suspended user: {}", request.getEmail());
+            throw new IllegalArgumentException("관리자에 의해 이용이 정지된 계정입니다.");
+        } else if (user.getStatus() != Status.ACTIVE) {
+            // DEACTIVATED, SUSPENDED 외 다른 비활성 상태가 있을 경우를 대비한 일반 메시지
+            log.warn("Login failed for non-active user (status: {}): {}", user.getStatus(), request.getEmail());
+            throw new IllegalArgumentException("로그인할 수 없는 계정입니다.");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
