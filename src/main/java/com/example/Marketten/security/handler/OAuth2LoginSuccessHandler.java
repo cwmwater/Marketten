@@ -61,12 +61,16 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
             Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
             accessTokenCookie.setPath("/"); // "/" 경로 이하 모든 페이지에서 쿠키 접근 가능
-            accessTokenCookie.setMaxAge(60); // 쿠키 유효 시간 (초 단위, 예: 60초)
+            accessTokenCookie.setMaxAge(60 * 60 * 7); // 쿠키 유효 시간 (초 단위, 예: 60초)
             // accessTokenCookie.setHttpOnly(true); // HttpOnly를 true로 하면 JS에서 접근 불가하므로, 여기서는 false(기본값)로 둡니다.
 
             response.addCookie(accessTokenCookie);
 
-            response.sendRedirect("http://localhost:5173");
+
+// ✅ accessToken을 URL 파라미터로 전달
+            response.sendRedirect("http://localhost:5173/auth/redirect?accessToken=" + accessToken);
+
+
 
         } catch (Exception e) {
             log.error("OAuth2LoginSuccessHandler Error: ", e);
