@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import java.time.LocalDateTime;
+
 @Repository
 public interface FinalPostRepository extends JpaRepository<FinalPost, Long> {
 
@@ -22,4 +24,7 @@ public interface FinalPostRepository extends JpaRepository<FinalPost, Long> {
 
 
     List<FinalPost> findByUser(User user);
+
+    // 특정 기간 동안 생성된 최종글 수를 계산합니다.
+    long countByCreatedDateBetween(LocalDateTime start, LocalDateTime end);
 }

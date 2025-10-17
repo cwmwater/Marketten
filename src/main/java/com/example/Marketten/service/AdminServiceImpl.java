@@ -1,37 +1,29 @@
 package com.example.Marketten.service;
 
-import com.example.Marketten.domain.Role;
-import com.example.Marketten.domain.Status;
-import com.example.Marketten.domain.User;
-import com.example.Marketten.dto.admin.AdminDashboardDTO;
-import com.example.Marketten.dto.admin.AdminUserListResponse;
-import com.example.Marketten.dto.admin.AdminUserDetailDTO;
+import com.example.Marketten.domain.*;
+import com.example.Marketten.dto.admin.*;
 import com.example.Marketten.dto.user.UserResponse;
-import com.example.Marketten.repository.FinalPostRepository;
-import com.example.Marketten.repository.TempPostRepository;
-import com.example.Marketten.repository.UserRepository;
-import com.example.Marketten.domain.SiteConfig;
-import com.example.Marketten.dto.admin.CommonConfigRequestDTO;
-import com.example.Marketten.repository.SiteConfigRepository;
+import com.example.Marketten.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
-
-import java.util.Map;
-import com.example.Marketten.dto.admin.VisitorStatsDTO;
-import com.example.Marketten.repository.VisitorLogRepository;
-import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,36 +32,32 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AdminServiceImpl implements AdminService {
 
+    // --- 의존성 주입 ---
     private final UserRepository userRepository;
+    private final VisitorLogRepository visitorLogRepository;
     private final FinalPostRepository finalPostRepository;
     private final TempPostRepository tempPostRepository;
-    private final VisitorLogRepository visitorLogRepository;
     private final SiteConfigRepository siteConfigRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${fastapi.server.url}")
     private String fastapiUrl;
-
     @Value("${fastapi.server.api-key}")
     private String fastapiApiKey;
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     /**
-     * 사용자 리스트 조회 로직 (기존과 동일)
+     * 역할(Role)에 따라 활성(ACTIVE) 사용자 목록을 페이징하여 조회합니다.
      */
     @Override
     @Transactional(readOnly = true)
-    // ✨ role 파라미터 추가
     public AdminUserListResponse getUserList(int page, int size, Role role) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-        // ✨ findAll 대신 findByRoleAndStatus를 사용하여 필터링
-        // (탈퇴하지 않은 ACTIVE 상태의 사용자 중에서 특정 role을 가진 사람만 조회)
         Page<User> userPage = userRepository.findByRoleAndStatus(role, Status.ACTIVE, pageable);
-
         List<UserResponse> userList = userPage.getContent().stream()
                 .map(UserResponse::from)
                 .collect(Collectors.toList());
-
         return AdminUserListResponse.builder()
                 .userList(userList)
                 .currentPage(userPage.getNumber())
@@ -79,7 +67,39 @@ public class AdminServiceImpl implements AdminService {
     }
 
     /**
-     * 사용자 권한 수정 로직 (기존과 동일)
+     * 특정 사용자의 상세 정보를 조회합니다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public AdminUserDetailDTO getUserDetail(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: ID " + userId));
+
+        long finalPostCount = finalPostRepository.countByUser(user);
+        long tempPostCount = tempPostRepository.countByUser(user);
+
+        String fullImageUrl = user.getImageUrl();
+        if (fullImageUrl != null && fullImageUrl.startsWith("/")) {
+            fullImageUrl = baseUrl + fullImageUrl;
+        }
+
+        return AdminUserDetailDTO.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .imageUrl(fullImageUrl)
+                .role(user.getRole())
+                .provider(user.getProvider().name())
+                .status(user.getStatus().name())
+                .createdAt(user.getCreatedAt())
+                .lastLoginAt(user.getLastLoginAt())
+                .totalFinalPosts(finalPostCount)
+                .totalTempPosts(tempPostCount)
+                .build();
+    }
+
+    /**
+     * 특정 사용자의 권한(Role)을 수정합니다.
      */
     @Override
     public void updateUserRole(Long userId, Role newRole) {
@@ -90,188 +110,188 @@ public class AdminServiceImpl implements AdminService {
     }
 
     /**
-     * 관리자 대시보드 통계 데이터 조회 로직 (수정됨)
+     * 관리자 자신의 비밀번호를 변경합니다.
      */
-    @Override
-    @Transactional(readOnly = true)
-    public AdminDashboardDTO getDashboardStats() {
-        // 1. 전체 사용자 수
-        long totalUserCount = userRepository.count();
-
-        // 2. 전체 최종글 수
-        long totalPostCount = finalPostRepository.count();
-
-        // 3. 전체 임시 저장 글 수
-        long tempPostCount = tempPostRepository.count();
-
-        // 4. 오늘 방문자 수 (오늘 00시 이후 로그인한 사용자)
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        long todayVisitorCount = userRepository.countByLastLoginAtAfter(startOfDay);
-
-        // 5. DTO로 빌드하여 반환
-        return AdminDashboardDTO.builder()
-                .totalUserCount(totalUserCount)
-                .totalPostCount(totalPostCount) // 저장 완료 글 수
-                .tempPostCount(tempPostCount)   // 임시 저장 글 수
-                .todayVisitorCount(todayVisitorCount)
-                .build();
-
-
-    }
-
-    /**
-     * 특정 사용자의 상세 정보를 조회하는 로직을 구현합니다.
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public AdminUserDetailDTO getUserDetail(Long userId) {
-        // 1. ID를 기반으로 User 엔티티를 조회합니다. (없으면 예외 발생)
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: ID " + userId));
-
-        // 2. 해당 사용자가 작성한 글의 개수를 각 Repository에서 조회합니다.
-        long finalPostCount = finalPostRepository.countByUser(user);
-        long tempPostCount = tempPostRepository.countByUser(user);
-
-        // 3. 조회한 모든 정보를 DTO로 변환하여 반환합니다.
-        return AdminUserDetailDTO.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .imageUrl(user.getImageUrl())
-                .role(user.getRole())
-                .provider(user.getProvider().name())   // User 엔티티에 getProvider()가 있다고 가정
-                .status(user.getStatus().name())       // User 엔티티에 getStatus()가 있다고 가정
-                .createdAt(user.getCreatedAt()) // User 엔티티에 getCreatedAt()이 있다고 가정
-                .lastLoginAt(user.getLastLoginAt()) // User 엔티티에 getLastLoginAt()이 있다고 가정
-                .totalFinalPosts(finalPostCount)
-                .totalTempPosts(tempPostCount)
-                .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public VisitorStatsDTO getVisitorStats() {
-        LocalDateTime now = LocalDateTime.now();
-
-        // 1. 오늘 방문자 수 (오늘 00:00:00 ~ 현재)
-        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
-        long daily = visitorLogRepository.countDistinctVisitorByVisitDateBetween(startOfToday, now);
-
-        // 2. 이번 달 방문자 수 (이번 달 1일 00:00:00 ~ 현재)
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        long monthly = visitorLogRepository.countDistinctVisitorByVisitDateBetween(startOfMonth, now);
-
-        // 3. 올해 방문자 수 (올해 1월 1일 00:00:00 ~ 현재)
-        LocalDateTime startOfYear = LocalDate.now().withDayOfYear(1).atStartOfDay();
-        long yearly = visitorLogRepository.countDistinctVisitorByVisitDateBetween(startOfYear, now);
-
-        return VisitorStatsDTO.builder()
-                .dailyVisitors(daily)
-                .monthlyVisitors(monthly)
-                .yearlyVisitors(yearly)
-                .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getTempPostCount() {
-        // 이미 구현된 로직을 그대로 재사용합니다.
-        return tempPostRepository.count();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getFinalPostCount() {
-        // 이미 구현된 로직을 그대로 재사용합니다.
-        return finalPostRepository.count();
-    }
-
     @Override
     public void updateAdminPassword(Long adminId, String currentPassword, String newPassword, String currentAdminEmail) {
-        // 1. DB에서 변경 대상 관리자 정보를 조회
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 관리자를 찾을 수 없습니다: ID " + adminId));
 
-        // 2. [보안] 현재 로그인한 관리자가 자기 자신인지 확인
         if (!admin.getEmail().equals(currentAdminEmail)) {
             throw new SecurityException("자신의 비밀번호만 변경할 수 있습니다.");
         }
-
-        // 3. [보안] 입력된 현재 비밀번호가 DB에 저장된 비밀번호와 일치하는지 확인
         if (!passwordEncoder.matches(currentPassword, admin.getPassword())) {
             throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
         }
 
-        // 4. 새 비밀번호를 암호화하여 저장
         admin.setPassword(passwordEncoder.encode(newPassword));
-        // @Transactional에 의해 메서드 종료 시 자동으로 DB에 업데이트됩니다. (Dirty Checking)
         log.info("Admin password updated successfully for UserID: {}", adminId);
     }
 
-    @Override
-    public void updateGptModel(String modelName) {
-        log.info("Sending request to FastAPI server to update model to: {}", modelName);
-
-        // 1. HTTP 요청을 보내기 위한 객체 생성
-        RestTemplate restTemplate = new RestTemplate();
-
-        // 2. HTTP 헤더 설정 (Content-Type, API Key)
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", fastapiApiKey);
-
-        // 3. HTTP 바디 설정 (JSON 형식)
-        Map<String, String> requestBody = Map.of("model_name", modelName);
-
-        // 4. 헤더와 바디를 합쳐서 요청 객체 생성
-        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
-
-        try {
-            // 5. FastAPI 서버에 PUT 요청 보내기
-            // 예: http://127.0.0.1:8000/config/model 로 요청
-            ResponseEntity<String> response = restTemplate.exchange(
-                    fastapiUrl + "/config/model", // 동료와 약속한 경로
-                    HttpMethod.PUT,
-                    requestEntity,
-                    String.class
-            );
-
-            // 6. 응답 확인 (선택 사항)
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully updated model on FastAPI server.");
-            } else {
-                log.error("Failed to update model on FastAPI server. Status: {}", response.getStatusCode());
-                throw new RuntimeException("FastAPI 서버 모델 변경에 실패했습니다.");
-            }
-        } catch (Exception e) {
-            log.error("Error while communicating with FastAPI server", e);
-            throw new RuntimeException("FastAPI 서버와 통신 중 오류가 발생했습니다.");
-        }
-    }
-
+    /**
+     * 사이트 공통 설정(헤더, 푸터, 배너)을 수정합니다.
+     */
     @Override
     public void updateCommonConfig(CommonConfigRequestDTO request) {
-        // DTO에 담겨온 각 값을 해당하는 Key를 찾아 DB에 업데이트합니다.
         updateConfigValue("HEADER_TEXT", request.getHeaderText());
         updateConfigValue("FOOTER_TEXT", request.getFooterText());
         updateConfigValue("BANNER_IMAGE_URL", request.getBannerImageUrl());
         log.info("Common site configurations have been updated.");
     }
 
-    /**
-     * 특정 설정 키(Key)의 값(Value)을 업데이트하는 헬퍼 메서드
-     */
     private void updateConfigValue(String key, String value) {
-        // 요청 DTO에 값이 없는(null) 필드는 업데이트하지 않고 건너뜁니다.
-        if (value == null) {
-            return;
-        }
-
+        if (value == null) return;
         SiteConfig config = siteConfigRepository.findById(key)
                 .orElseThrow(() -> new IllegalArgumentException("설정 키를 찾을 수 없습니다: " + key));
-
         config.updateValue(value);
-        // @Transactional에 의해 메서드 종료 시 자동으로 DB에 저장됩니다.
+    }
+
+    /**
+     * FastAPI 서버의 GPT 모델을 업데이트합니다.
+     */
+    @Override
+    public void updateGptModel(String modelName) {
+        log.info("Sending request to FastAPI server to update model to: {}", modelName);
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", fastapiApiKey);
+        Map<String, String> requestBody = Map.of("model_name", modelName);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    fastapiUrl + "/config/model", HttpMethod.PUT, requestEntity, String.class
+            );
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("FastAPI 서버 모델 변경에 실패했습니다. Status: " + response.getStatusCode());
+            }
+            log.info("Successfully updated model on FastAPI server.");
+        } catch (Exception e) {
+            log.error("Error while communicating with FastAPI server", e);
+            throw new RuntimeException("FastAPI 서버와 통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 전체 임시 저장 글의 수를 조회합니다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long getTempPostCount() {
+        return tempPostRepository.count();
+    }
+
+    /**
+     * 전체 최종 저장 글의 수를 조회합니다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long getFinalPostCount() {
+        return finalPostRepository.count();
+    }
+
+    /**
+     * 대시보드 차트에 필요한 모든 통계 데이터를 조회하는 로직을 구현합니다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public AdminDashboardStatsDTO getDashboardChartStats() {
+        LocalDateTime now = LocalDateTime.now();
+
+        return AdminDashboardStatsDTO.builder()
+                .daily(getStatsForLast7Days(now))
+                .weekly(getStatsForLast4Weeks(now))
+                .monthly(getStatsForLast12Months(now))
+                .yearly(getStatsForLast4Years(now))
+                .build();
+    }
+
+    // ✨ 리포트 요약 통계 조회 로직 구현
+    @Override
+    @Transactional(readOnly = true)
+    public ReportSummaryDTO getReportSummary() {
+        long totalUniqueVisitors = visitorLogRepository.countDistinctVisitor();
+        long activeUsers = userRepository.countByStatus(Status.ACTIVE);
+        long totalFinalPosts = finalPostRepository.count();
+
+        return ReportSummaryDTO.builder()
+                .totalUniqueVisitors(totalUniqueVisitors)
+                .activeUsers(activeUsers)
+                .totalFinalPosts(totalFinalPosts)
+                .build();
+    }
+
+    // --- 통계 계산을 위한 헬퍼(Helper) 메서드들 ---
+
+    private PeriodStatsDTO getStatsForLast7Days(LocalDateTime now) {
+        List<ChartPointDTO> visitors = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            LocalDateTime day = now.minusDays(i);
+            long count = visitorLogRepository.countDistinctVisitorByVisitDateBetween(day.with(LocalTime.MIN), day.with(LocalTime.MAX));
+            visitors.add(new ChartPointDTO(day.format(DateTimeFormatter.ofPattern("MM-dd")), count));
+        }
+        Collections.reverse(visitors);
+
+        List<ChartPointDTO> posts = List.of(
+                new ChartPointDTO("임시저장글", tempPostRepository.countByUpdatedAtBetween(now.minusDays(1), now)),
+                new ChartPointDTO("최종글", finalPostRepository.countByCreatedDateBetween(now.minusDays(1), now))
+        );
+        return PeriodStatsDTO.builder().visitorStats(visitors).postStats(posts).build();
+    }
+
+    private PeriodStatsDTO getStatsForLast4Weeks(LocalDateTime now) {
+        List<ChartPointDTO> visitors = new ArrayList<>();
+        WeekFields weekFields = WeekFields.of(Locale.getDefault());
+        for (int i = 0; i < 4; i++) {
+            LocalDateTime week = now.minusWeeks(i);
+            LocalDateTime start = week.with(DayOfWeek.MONDAY).with(LocalTime.MIN);
+            LocalDateTime end = week.with(DayOfWeek.SUNDAY).with(LocalTime.MAX);
+            long count = visitorLogRepository.countDistinctVisitorByVisitDateBetween(start, end);
+            visitors.add(new ChartPointDTO(week.get(weekFields.weekOfWeekBasedYear()) + "주차", count));
+        }
+        Collections.reverse(visitors);
+
+        List<ChartPointDTO> posts = List.of(
+                new ChartPointDTO("임시저장글", tempPostRepository.countByUpdatedAtBetween(now.minusWeeks(1), now)),
+                new ChartPointDTO("최종글", finalPostRepository.countByCreatedDateBetween(now.minusWeeks(1), now))
+        );
+        return PeriodStatsDTO.builder().visitorStats(visitors).postStats(posts).build();
+    }
+
+    private PeriodStatsDTO getStatsForLast12Months(LocalDateTime now) {
+        List<ChartPointDTO> visitors = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            LocalDateTime month = now.minusMonths(i);
+            LocalDateTime start = month.withDayOfMonth(1).with(LocalTime.MIN);
+            LocalDateTime end = month.with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX);
+            long count = visitorLogRepository.countDistinctVisitorByVisitDateBetween(start, end);
+            visitors.add(new ChartPointDTO(start.format(DateTimeFormatter.ofPattern("yy-MM")), count));
+        }
+        Collections.reverse(visitors);
+
+        List<ChartPointDTO> posts = List.of(
+                new ChartPointDTO("임시저장글", tempPostRepository.countByUpdatedAtBetween(now.minusMonths(1), now)),
+                new ChartPointDTO("최종글", finalPostRepository.countByCreatedDateBetween(now.minusMonths(1), now))
+        );
+        return PeriodStatsDTO.builder().visitorStats(visitors).postStats(posts).build();
+    }
+
+    private PeriodStatsDTO getStatsForLast4Years(LocalDateTime now) {
+        List<ChartPointDTO> visitors = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            LocalDateTime year = now.minusYears(i);
+            LocalDateTime start = year.withDayOfYear(1).with(LocalTime.MIN);
+            LocalDateTime end = year.with(TemporalAdjusters.lastDayOfYear()).with(LocalTime.MAX);
+            long count = visitorLogRepository.countDistinctVisitorByVisitDateBetween(start, end);
+            visitors.add(new ChartPointDTO(String.valueOf(start.getYear()), count));
+        }
+        Collections.reverse(visitors);
+
+        List<ChartPointDTO> posts = List.of(
+                new ChartPointDTO("임시저장글", tempPostRepository.countByUpdatedAtBetween(now.minusYears(1), now)),
+                new ChartPointDTO("최종글", finalPostRepository.countByCreatedDateBetween(now.minusYears(1), now))
+        );
+        return PeriodStatsDTO.builder().visitorStats(visitors).postStats(posts).build();
     }
 }
