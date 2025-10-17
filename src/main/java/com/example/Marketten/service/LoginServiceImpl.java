@@ -119,6 +119,17 @@ public class LoginServiceImpl implements LoginService {
         refreshTokenRepository.delete(storedToken);
     }
 
+    /**
+     * 사용자의 마지막 로그인 시간을 현재 시간으로 업데이트합니다.
+     */
+    @Override
+    public void updateLastLogin(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+        user.setLastLoginAt(LocalDateTime.now());
+        // 이 메서드는 @Transactional이므로, 메서드가 끝나면 변경 사항이 자동으로 DB에 저장됩니다.
+    }
+
     @Override
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)

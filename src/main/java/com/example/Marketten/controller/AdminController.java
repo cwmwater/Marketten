@@ -4,6 +4,8 @@ import com.example.Marketten.domain.Role;
 import com.example.Marketten.dto.admin.*;
 import com.example.Marketten.security.CustomUserDetails;
 import com.example.Marketten.service.AdminService;
+import com.example.Marketten.service.CommonService;
+import com.example.Marketten.dto.common.CommonConfigResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final CommonService commonService;
 
     /**
      * 사용자 리스트 조회 (페이징 처리)
@@ -137,7 +140,19 @@ public class AdminController {
     }
 
     /**
-     * 사이트 공통 설정(헤더, 푸터, 배너) 수정
+     * 사이트 공통 설정 조회 API
+     * 경로: GET /api/admin/common/config
+     * ✨ @PreAuthorize("permitAll") : 클래스 레벨의 보안 규칙을 무시하고, 이 메서드만 특별히 모두에게 허용합니다.
+     */
+    @GetMapping("/common/config")
+    @PreAuthorize("permitAll")
+    public ResponseEntity<CommonConfigResponseDTO> getCommonConfig() {
+        CommonConfigResponseDTO response = commonService.getCommonConfig();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 사이트 공통 설정 수정
      * 경로: PATCH /api/admin/common
      */
     @PatchMapping("/common")
