@@ -21,6 +21,11 @@ public class SiteConfig {
     @Column(name = "config_value", length = 2000)
     private String configValue; // 실제 설정 값 (예: "마켓텐에 오신 것을 환영합니다.")
 
+    public SiteConfig(String configKey, String configValue) {
+        this.configKey = configKey;
+        this.configValue = configValue;
+    }
+
     // 값을 업데이트하기 위한 편의 메서드
     public void updateValue(String newValue) {
         this.configValue = newValue;

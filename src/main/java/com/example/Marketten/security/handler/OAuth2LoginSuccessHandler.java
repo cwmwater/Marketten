@@ -47,7 +47,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 return;
             }
 
-            user.setLastLoginAt(LocalDateTime.now());
+            loginService.updateLastLogin(email);
 
             VisitorLog log = VisitorLog.builder()
                     .visitor(user)
