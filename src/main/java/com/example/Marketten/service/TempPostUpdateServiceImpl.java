@@ -42,7 +42,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
 
         FinalPost post = finalPostRepository.save(FinalPost.builder()
                 .user(user)
-                .finalTone("STANDARD")
+                .finalTone("기본")
                 .status("WRITING")
                 .createdDate(LocalDateTime.now())
                 .updatedDate(LocalDateTime.now())

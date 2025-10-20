@@ -19,6 +19,6 @@ public class ToneList {
     @Column(length = 50, nullable = false)
     private String toneName; // 톤 명
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     private String tonePreview; //톤 미리보기 텍스트
 }
