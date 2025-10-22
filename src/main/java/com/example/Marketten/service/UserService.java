@@ -56,4 +56,6 @@ public interface UserService {
      * @param newPassword 새 비밀번호
      */
     void resetPasswordByEmail(String email, String newPassword);
+
+    void completeTutorial(String username);
 }

@@ -46,6 +46,7 @@ public class UserServiceImpl implements UserService {
 
         long finalPostCount = finalPostRepository.countByUser(user);
         long tempPostCount = tempPostRepository.countByUser(user);
+        boolean needsOnboarding = (finalPostCount == 0) || !user.isTutorialCompleted();
 
         String fullImageUrl = user.getImageUrl();
         if (fullImageUrl != null && fullImageUrl.startsWith("/")) {
@@ -154,5 +155,13 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
 
         log.info("Password has been reset for user: {}", email);
+    }
+
+    @Override
+    public void completeTutorial(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+        user.setTutorialCompleted(true);
+        log.info("튜토리얼 완료 처리: {}", username);
     }
 }
