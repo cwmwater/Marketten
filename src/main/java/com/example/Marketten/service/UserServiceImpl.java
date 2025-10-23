@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
 
-        long finalPostCount = finalPostRepository.countByUser(user);
+        long finalPostCount = finalPostRepository.countByUserAndStatus(user, "Complete");
         long tempPostCount = tempPostRepository.countByUser(user);
         boolean needsOnboarding = (finalPostCount == 0) || !user.isTutorialCompleted();
 
