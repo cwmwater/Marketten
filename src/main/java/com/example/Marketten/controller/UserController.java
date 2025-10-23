@@ -1,9 +1,11 @@
 package com.example.Marketten.controller;
 
+import com.example.Marketten.domain.User;
 import com.example.Marketten.dto.user.MyPageUserResponse; // ✨ 내 정보 조회를 위한 별도 DTO (아래에서 생성)
 import com.example.Marketten.dto.user.PasswordInitRequest; // ✨ 비밀번호 초기화 DTO (아래에서 생성)
 import com.example.Marketten.dto.user.UserPasswordUpdateRequest;
 import com.example.Marketten.dto.user.UserUpdateRequest;
+import com.example.Marketten.repository.UserRepository;
 import com.example.Marketten.security.CustomUserDetails; // ✨ CustomUserDetails 임포트
 import com.example.Marketten.service.UserService;
 import jakarta.validation.Valid;
@@ -91,4 +93,15 @@ public class UserController {
         userService.withdrawMe(currentUser.getUsername());
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 사용자의 온보딩 튜토리얼 완료 상태를 기록합니다.
+     * 경로: PATCH /api/users/me/tutorial-complete
+     */
+    @PatchMapping("/me/tutorial-complete")
+    public ResponseEntity<Void> completeTutorial(@AuthenticationPrincipal CustomUserDetails currentUser) {
+        userService.completeTutorial(currentUser.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
 }

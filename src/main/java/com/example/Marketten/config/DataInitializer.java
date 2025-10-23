@@ -22,8 +22,8 @@ public class DataInitializer implements CommandLineRunner {
 
         // 여기에 애플리케이션에 필요한 모든 기본 설정 값을 정의합니다.
         Map<String, String> initialConfigs = Map.of(
-                "MAIN_TITLE", "Marketten에 오신 것을 환영합니다",
-                "MAIN_SUBTITLE", "아래로 스크롤하여 Marketten의 주요 기능을 확인해보세요.",
+                "MAIN_TITLE", "마케팅의 시작, 마케튼으로!",
+                "MAIN_SUBTITLE", "간단한 클릭만으로 제품 홍보 블로그 글을 작성해보세요!",
                 "CTA_TITLE", "지금 시작해보세요",
                 "FOOTER_COMPANY_NAME", "마케튼(주)",
                 "FOOTER_ADDRESS", "중부대학교",

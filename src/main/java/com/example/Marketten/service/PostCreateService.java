@@ -2,6 +2,7 @@ package com.example.Marketten.service;
 
 import com.example.Marketten.dto.post.PostRequest;
 import com.example.Marketten.dto.post.PostResponse;
+import com.example.Marketten.dto.post.PostSummaryDTO;
 import com.example.Marketten.dto.post.PostUpdateRequest;
 
 import java.util.List;
@@ -19,6 +20,6 @@ public interface PostCreateService {
     PostResponse getPost(Long postId);
 
     // 보관함 글 리스트 조회
-    List<PostResponse> getPostsByEmail(String email);
+    List<PostSummaryDTO> getPostsByEmail(String email);
 
 }

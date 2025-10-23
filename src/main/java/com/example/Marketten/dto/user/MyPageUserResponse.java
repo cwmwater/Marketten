@@ -16,4 +16,5 @@ public class MyPageUserResponse {
     private long totalFinalPosts;
     private long totalTempPosts;
     private boolean passwordExists;
+    private boolean needsOnboarding;
 }

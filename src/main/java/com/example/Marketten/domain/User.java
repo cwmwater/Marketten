@@ -57,6 +57,9 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     @Column(name = "clear_post", nullable = false)
     private int clearPost; // 최종 게시물 수
 
+    @Column(name = "tutorial_completed", nullable = false)
+    private boolean tutorialCompleted = false;
+
     // --- Setter 메서드 (UserServiceImpl에서 사용) ---
 
     /**
@@ -102,6 +105,10 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
      */
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isTutorialCompleted() {
+        return this.tutorialCompleted;
     }
 
     // --- 비즈니스 로직 메서드 ---

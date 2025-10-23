@@ -20,4 +20,5 @@ public class TokenInfo {
 
     // 로그인/회원가입/재발급 시 함께 반환할 사용자 정보
     private UserResponse user;
+    private boolean needsOnboarding;
 }
