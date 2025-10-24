@@ -18,7 +18,7 @@ import java.util.Set;
 public class FastApiClient {
 
     private final RestTemplate restTemplate;
-    private final String BASE_URL = "http://localhost:8000/gpt";
+    private final String BASE_URL = "http://marketten-module:8000/gpt";
 
     public Map<String, Object> postToFastApi(String path, Object request) {
         try {

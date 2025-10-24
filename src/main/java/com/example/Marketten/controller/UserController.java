@@ -23,7 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
-    // ✨ JWTUtil과 HttpServletRequest는 더 이상 필요 없으므로 삭제
 
     /**
      * 1. 내 정보 조회 API
@@ -34,7 +33,6 @@ public class UserController {
     public ResponseEntity<MyPageUserResponse> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        // ✨ Spring Security가 알아서 토큰을 검증하고 사용자 정보를 currentUser에 넣어줍니다.
         String currentUsername = currentUser.getUsername(); // 이메일 가져오기
         MyPageUserResponse response = userService.getMyInfo(currentUsername);
         return ResponseEntity.ok(response);

@@ -10,6 +10,7 @@ import com.example.Marketten.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -24,6 +25,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JWTUtil jwtUtil;
     private final Supplier<LoginService> loginServiceSupplier;
     private final VisitorLogRepository visitorLogRepository;
+
+
 
     public OAuth2LoginSuccessHandler(JWTUtil jwtUtil, Supplier<LoginService> loginServiceSupplier, VisitorLogRepository visitorLogRepository) {
         this.jwtUtil = jwtUtil;
@@ -43,7 +46,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
             if (user.getStatus() != Status.ACTIVE) {
                 // ... (상태 확인 및 에러 리다이렉트 로직은 동일)
-                response.sendRedirect("http://localhost:5173/login?error=account_inactive");
+                response.sendRedirect("http://marketten.shop/login?error=account_inactive");
                 return;
             }
 
@@ -68,7 +71,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
 
 // ✅ accessToken을 URL 파라미터로 전달
-            response.sendRedirect("http://localhost:5173/auth/redirect?accessToken=" + accessToken);
+            response.sendRedirect("http://marketten.shop/auth/redirect?accessToken=" + accessToken);
 
 
 
