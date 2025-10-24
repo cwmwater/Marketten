@@ -1,7 +1,7 @@
 # application.yml
 spring:
   datasource:
-    url: jdbc:mysql://marketten-mysql:3306/marketten-mysql?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&useUnicode=true
+    url: jdbc:mysql://marketten-mysql:3306/marketten?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&useUnicode=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: marketten
     password: marketten
@@ -114,6 +114,6 @@ app:
 file:
   upload:
     # 1. 파일이 실제로 저장될 서버의 절대 경로 (폴더 끝에 '/' 포함)
-    path: C:/marketten/upload/
+    path: /app/uploads/
     # 2. 브라우저가 이 파일들에 접근할 때 사용할 URL 앞부분
     url-prefix: /images/
