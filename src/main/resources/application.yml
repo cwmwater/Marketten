@@ -32,6 +32,11 @@ spring:
       max-request-size: 30MB
       max-file-size: 10MB
 
+  decorator:
+    datasource:
+      p6spy:
+        enable-logging: false
+
   security:
     oauth2:
       client:
@@ -83,12 +88,6 @@ marketten:
 # JWT key (비밀 키)
 jwt:
  secret: ${JWT_SECRET}
-
-
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: true
 
 
 logging:
