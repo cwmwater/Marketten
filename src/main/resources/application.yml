@@ -101,9 +101,10 @@ server:
 fastapi:
   server:
     url: http://module:8000
+    api-key: TEMP_FASTAPI_API_KEY
 
 app:
-  base-url: http://backend:8080
+  base-url: https://www.marketten.shop
 
 # 파일 업로드 설정
 file:
