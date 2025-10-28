@@ -22,6 +22,8 @@ public interface FinalPostRepository extends JpaRepository<FinalPost, Long> {
 
     long countByUser(User user);
 
+    long countByUserAndStatus(User user, String status);
+
 
     List<FinalPost> findByUser(User user);
 

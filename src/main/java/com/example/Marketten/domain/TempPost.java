@@ -43,7 +43,7 @@ public class TempPost {
     private String titleKeywords; // 선택된 제목
 
     @Column(length = 20, nullable = false)
-    private String selectedTone = "STANDARD"; // 선택한 톤
+    private String selectedTone = "기본"; // 선택한 톤
 
     private Integer step = 1; //현재 진행 페이지
 

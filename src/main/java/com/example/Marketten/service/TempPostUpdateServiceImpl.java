@@ -12,6 +12,7 @@ import com.example.Marketten.dto.temppost.TempPostResponce;
 import com.example.Marketten.dto.temppost.TempPostUpdateRequest;
 import com.example.Marketten.repository.FinalPostRepository;
 import com.example.Marketten.repository.TempPostRepository;
+import com.example.Marketten.repository.ToneListRepository;
 import com.example.Marketten.repository.UserRepository;
 import com.example.Marketten.util.FastApiClient;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     private final FinalPostRepository finalPostRepository;
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
+    private final ToneListRepository toneListRepository;
 
     /** -------------------- 임시 저장글 생성 -------------------- */
     @Override
@@ -42,7 +44,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
 
         FinalPost post = finalPostRepository.save(FinalPost.builder()
                 .user(user)
-                .finalTone("STANDARD")
+                .finalTone("기본")
                 .status("WRITING")
                 .createdDate(LocalDateTime.now())
                 .updatedDate(LocalDateTime.now())
@@ -242,12 +244,16 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         // 액션 수행
         switch (action) {
             case "generateContent":
+                String tonePreview = toneListRepository.findByToneName(temp.getSelectedTone())
+                        .map(ToneList::getTonePreview)
+                        .orElse("PREVIEW");
+
                 ContentGenerateRequest contentReq = ContentGenerateRequest.builder()
                         .productInfo(temp.getProductInfo())
                         .productFeatures(temp.getProductFeatures())
                         .userExperience(temp.getUserExperience())
                         .selectedTone(temp.getSelectedTone())
-                        .tonePreview("PREVIEW")
+                        .tonePreview(tonePreview)
                         .keywords(temp.getKeywords())
                         .build();
                 String generated = fastApiClient.generateContent(contentReq);

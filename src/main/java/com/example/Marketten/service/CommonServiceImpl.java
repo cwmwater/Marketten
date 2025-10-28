@@ -26,8 +26,8 @@ public class CommonServiceImpl implements CommonService {
     @Override
     public CommonConfigResponseDTO getCommonConfig() {
         // --- 메인 페이지(MainPage.jsx)용 데이터 조회 ---
-        String mainTitle = findConfigValue("MAIN_TITLE", "Marketten에 오신 것을 환영합니다");
-        String mainSubtitle = findConfigValue("MAIN_SUBTITLE", "아래로 스크롤하여 Marketten의 주요 기능을 확인해보세요.");
+        String mainTitle = findConfigValue("MAIN_TITLE", "마케팅의 완성, 마케튼으로!");
+        String mainSubtitle = findConfigValue("MAIN_SUBTITLE", "간단한 클릭만으로 효과적인 제품 홍보 블로그 글을 완성하세요!");
         String ctaTitle = findConfigValue("CTA_TITLE", "지금 시작해보세요");
 
         // --- 푸터(Footer.jsx) 및 설정 페이지(FooterSettings.jsx)용 데이터 조회 ---
