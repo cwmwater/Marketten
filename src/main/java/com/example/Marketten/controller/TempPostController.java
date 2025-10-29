@@ -15,15 +15,12 @@ public class TempPostController {
 
     private final TempPostUpdateService tempPostService;
 
-    /**
-     * -------------------- 임시 저장글 생성 --------------------
-     */
+    // 임시 저장글 생성
     @PostMapping("/")
     public ResponseEntity<TempPostResponce> createTempPost(
             @RequestBody(required = false) TempPostRequest request,
             @RequestHeader("email") String userEmail) {
 
-        // request가 null이면 빈 객체로 생성
         if (request == null) {
             request = TempPostRequest.builder().build();
         }
@@ -32,9 +29,7 @@ public class TempPostController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * -------------------- 임시 저장글 수정 --------------------
-     */
+    // 임시 저장글 수정
     @PatchMapping("/{inputId}")
     public ResponseEntity<TempPostResponce> updateTempPost(
             @PathVariable Long inputId,
@@ -44,27 +39,21 @@ public class TempPostController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * -------------------- 임시 저장글 삭제 --------------------
-     */
+    // 임시 저장글 삭제
     @DeleteMapping("/{inputId}")
     public ResponseEntity<Void> deleteTempPost(@PathVariable Long inputId) {
         tempPostService.deleteTempPost(inputId);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * -------------------- 임시 저장글 조회 --------------------
-     */
+    // 임시 저장글 조회
     @GetMapping("/{inputId}")
     public ResponseEntity<TempPostResponce> getTempPost(@PathVariable Long inputId) {
         TempPostResponce response = tempPostService.getTempPost(inputId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * -------------------- 액션 처리 (본문, 키워드, 제목 등) --------------------
-     */
+    // 임시 저장글 개별 액션 처리 (본문, 키워드, 제목 등)
     @PostMapping("/{inputId}/action/{action}")
     public ResponseEntity<TempPostResponce> handleAction(
             @PathVariable Long inputId,

@@ -51,7 +51,7 @@ spring:
             client-name: Naver
             authorization-grant-type: authorization_code
           kakao:
-            client-id: 328177b7eeeed9e2fe0650e83e98b7d4
+            client-id: 3d03e398a37f760888ad693c5f67f58b
             client-secret: "" # 시크릿 값 확인 필요
             redirect-uri: "http://localhost:8080/login/oauth2/code/kakao" # 표준 콜백 URI 사용
             scope: profile_nickname,account_email
