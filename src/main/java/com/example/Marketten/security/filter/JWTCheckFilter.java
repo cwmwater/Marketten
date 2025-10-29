@@ -32,7 +32,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String requestURI = request.getRequestURI();
 
-        // ✨ 이미지 경로는 이 필터가 아예 검사하지 않도록 명시적으로 제외합니다. (성능 향상)
+        // 이미지 경로는 이 필터가 아예 검사하지 않도록 명시적으로 제외합니다. (성능 향상)
         if (requestURI.startsWith("/images/")) {
             return true;
         }
@@ -52,19 +52,12 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
 
-        // =========================================================================
-        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-        // =========================================================================
-        // ✨ [가장 중요한 수정]
         // Authorization 헤더가 없거나, 'Bearer '로 시작하지 않으면
-        // 에러를 보내지 않고, 그냥 다음 필터로 요청을 넘깁니다. (공개 경로 접근 허용)
+        // 에러를 보내지 않고, 그냥 다음 필터로 요청을 넘김 (공개 경로 접근 허용)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-            return; // ✨ 여기서 바로 함수를 종료합니다.
+            return;
         }
-        // =========================================================================
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-        // =========================================================================
 
         // --- 이하 토큰 검증 로직은 기존과 동일 ---
         try {

@@ -19,22 +19,21 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users") // 기본 경로는 그대로 /api/users
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
-    // ✨ JWTUtil과 HttpServletRequest는 더 이상 필요 없으므로 삭제
 
     /**
      * 1. 내 정보 조회 API
      * 경로: GET /api/users/me
-     * JWT 토큰을 기반으로 "나"의 정보를 조회합니다.
+     * JWT 토큰을 기반으로 "나"의 정보를 조회
      */
     @GetMapping("/me")
     public ResponseEntity<MyPageUserResponse> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        // ✨ Spring Security가 알아서 토큰을 검증하고 사용자 정보를 currentUser에 넣어줍니다.
+        // Spring Security가 알아서 토큰을 검증하고 사용자 정보를 currentUser에 넣어줌
         String currentUsername = currentUser.getUsername(); // 이메일 가져오기
         MyPageUserResponse response = userService.getMyInfo(currentUsername);
         return ResponseEntity.ok(response);
@@ -95,7 +94,7 @@ public class UserController {
     }
 
     /**
-     * 사용자의 온보딩 튜토리얼 완료 상태를 기록합니다.
+     * 사용자의 온보딩 튜토리얼 완료 상태를 기록
      * 경로: PATCH /api/users/me/tutorial-complete
      */
     @PatchMapping("/me/tutorial-complete")

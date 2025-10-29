@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/common") // ✨ 이 컨트롤러의 모든 경로는 /api/common으로 시작
+@RequestMapping("/api/common")
 @RequiredArgsConstructor
 public class CommonController {
 

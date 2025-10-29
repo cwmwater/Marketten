@@ -36,10 +36,12 @@ import java.util.function.Supplier;
 
 @Configuration
 @Slf4j
+// 보안 활성화 -> 이게 있어야 hasRole이 가능함
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class CustomSecurityConfig {
 
+    // 현재 로그인한 사용자 정보를 비동기에서도 공유
     static {
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
@@ -48,6 +50,7 @@ public class CustomSecurityConfig {
     private final UserRepository userRepository;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
+    // CORS 필터 등록
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistration(CorsConfigurationSource corsConfigurationSource) {
         FilterRegistrationBean<CorsFilter> registration = new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource));
@@ -63,14 +66,19 @@ public class CustomSecurityConfig {
             VisitorLogRepository visitorLogRepository
     ) throws Exception {
 
+        // 사용자 정보 세션 저장 X
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        // CSRF 공격 방어 X
         http.csrf(AbstractHttpConfigurer::disable);
+        // 익명 사용자 설정 X
         http.anonymous(AbstractHttpConfigurer::disable);
+        // 인증, 인가 예외 설정
         http.exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
                 .accessDeniedHandler(new CustomAccessDeniedHandler())
         );
 
+        // 필요할때 꺼내씀 (순환참조 방지)
         Supplier<LoginService> loginServiceSupplier = () -> applicationContext.getBean(LoginService.class);
 
         OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler = new OAuth2LoginSuccessHandler(
@@ -79,10 +87,11 @@ public class CustomSecurityConfig {
                 visitorLogRepository
         );
 
+        // 인가 설정
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        // ✨ Spring Boot의 기본 에러 페이지 경로(/error)를 인증 없이 허용합니다.
-                        // 이 규칙이 없으면, 다른 에러 발생 시 이중으로 보안 에러가 발생합니다.
+                        // Spring Boot의 기본 에러 페이지 경로(/error)를 인증 없이 허용
+                        // 이 규칙이 없으면, 다른 에러 발생 시 이중으로 보안 에러가 발생
                         AntPathRequestMatcher.antMatcher("/api/common/**"),
                         AntPathRequestMatcher.antMatcher("/favicon.ico"),
                         AntPathRequestMatcher.antMatcher("/error"),
@@ -96,6 +105,7 @@ public class CustomSecurityConfig {
                 ).permitAll()
                 .anyRequest().authenticated());
 
+        // 로그인 처리 전 JWT 토큰 확인
         http.addFilterBefore(
                 new JWTCheckFilter(jwtUtil, userRepository),
                 UsernamePasswordAuthenticationFilter.class
@@ -112,11 +122,13 @@ public class CustomSecurityConfig {
         return http.build();
     }
 
+    // 암호화방식 설정
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // CORS 정책 설정 (더 자세한 내요은 configurationsource)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

@@ -15,7 +15,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    // Spring Security가 인증을 시도할 때(로그인 시) 호출됩니다.
+    // Spring Security가 인증을 시도할 때(로그인 시) 호출됨
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 

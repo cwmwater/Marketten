@@ -18,7 +18,7 @@ public class TitleList {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "input_id", nullable = false)
-    private TempPost tempPost; //임시 저장 아이디 FK
+    private TempPost tempPost; // 임시 저장 아이디 FK
 
     @Column(length = 255, nullable = false)
     private String titleName;

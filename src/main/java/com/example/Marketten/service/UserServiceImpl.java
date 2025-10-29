@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
     private String baseUrl;
 
     /**
-     * 현재 로그인된 사용자의 정보(마이페이지용)를 조회합니다.
+     * 현재 로그인된 사용자의 정보(마이페이지용)를 조회하는 로직
      */
     @Override
     @Transactional(readOnly = true)
@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
             fullImageUrl = baseUrl + fullImageUrl;
         }
 
-        // ✨ 사용자의 비밀번호 필드가 null이 아니면 true, null이면 false가 됩니다.
+        // 사용자의 비밀번호 필드가 null이 아니면 true, null이면 false가 됨
         boolean passwordExists = user.getPassword() != null;
 
         return MyPageUserResponse.builder()
@@ -65,12 +65,12 @@ public class UserServiceImpl implements UserService {
                 .lastLoginAt(user.getLastLoginAt() != null ? user.getLastLoginAt().toString() : null)
                 .totalFinalPosts(finalPostCount)
                 .totalTempPosts(tempPostCount)
-                .passwordExists(passwordExists) // ✨ 빌더에 값을 채워서 보냅니다.
+                .passwordExists(passwordExists)
                 .build();
     }
 
     /**
-     * 현재 로그인된 사용자의 정보(닉네임, 프로필 이미지)를 수정합니다.
+     * 현재 로그인된 사용자의 정보(닉네임, 프로필 이미지)를 수정하는 로직
      */
     @Override
     public void updateMyInfo(String username, UserUpdateRequest request, MultipartFile profileImage) {
@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 현재 로그인된 사용자의 비밀번호를 변경합니다.
+     * 현재 로그인된 사용자의 비밀번호를 변경하는 로직
      */
     @Override
     public void updateMyPassword(String username, UserPasswordUpdateRequest request) {
@@ -108,7 +108,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 현재 로그인된 사용자(소셜)의 비밀번호를 초기 설정합니다.
+     * 현재 로그인된 사용자(소셜)의 비밀번호를 초기 설정하는 로직
      */
     @Override
     public void initMyPassword(String username, PasswordInitRequest request) {
@@ -127,7 +127,7 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 현재 로그인된 사용자를 탈퇴 처리합니다. (논리적 삭제)
+     * 현재 로그인된 사용자를 탈퇴 처리하는 로직 (논리적 삭제)
      */
     @Override
     public void withdrawMe(String username) {
@@ -143,8 +143,7 @@ public class UserServiceImpl implements UserService {
 
 
     /**
-     * 이메일 기반 비밀번호 재설정 (관리자용 또는 비밀번호 찾기 기능)
-     * 인터페이스에 선언된 메서드를 구현합니다.
+     * 이메일 기반 비밀번호 재설정하는 로직 (관리자용 또는 비밀번호 찾기 기능)
      */
     @Override
     public void resetPasswordByEmail(String email, String newPassword) {
@@ -157,6 +156,9 @@ public class UserServiceImpl implements UserService {
         log.info("Password has been reset for user: {}", email);
     }
 
+    /**
+     * 온보딩 튜토리얼 완료된 사용자는 true 값 반환하는 로직
+     */
     @Override
     public void completeTutorial(String username) {
         User user = userRepository.findByEmail(username)

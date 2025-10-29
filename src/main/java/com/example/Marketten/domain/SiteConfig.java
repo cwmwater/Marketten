@@ -18,6 +18,7 @@ public class SiteConfig {
     @Column(name = "config_key", length = 50)
     private String configKey; // 설정 키 (예: "HEADER_TEXT", "FOOTER_COPYRIGHT")
 
+    // 기본 값
     @Column(name = "config_value", length = 2000)
     private String configValue; // 실제 설정 값 (예: "마켓텐에 오신 것을 환영합니다.")
 

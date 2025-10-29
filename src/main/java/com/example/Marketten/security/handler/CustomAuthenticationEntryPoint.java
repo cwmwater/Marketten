@@ -14,8 +14,8 @@ import java.io.PrintWriter;
 import java.util.Map;
 
 /**
- * 인증되지 않은 사용자(토큰 없음/만료/잘못됨)가 보호된 리소스에 접근할 때 호출됩니다.
- * 기본 동작인 /login 리다이렉트 대신 401 Unauthorized JSON 응답을 반환하도록 재정의합니다.
+ * 인증되지 않은 사용자(토큰 없음/만료/잘못됨)가 보호된 리소스에 접근할 때 호출
+ * 기본 동작인 /login 리다이렉트 대신 401 Unauthorized JSON 응답을 반환하도록 재정의
  */
 @Component
 @Slf4j

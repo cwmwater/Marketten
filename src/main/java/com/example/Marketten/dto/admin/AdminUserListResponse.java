@@ -8,8 +8,8 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * 관리자 페이지 사용자 리스트 조회 응답 DTO입니다.
- * 페이징 정보와 UserResponse 리스트를 포함합니다.
+ * 관리자 페이지 사용자 리스트 조회 응답 DTO
+ * 페이징 정보와 UserResponse 리스트를 포함
  */
 @Getter
 @Setter

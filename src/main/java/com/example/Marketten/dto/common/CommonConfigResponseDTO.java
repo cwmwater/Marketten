@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
+// 모든 권한이 볼 수 있는 메인 배너, 푸터
 public class CommonConfigResponseDTO {
     private String mainTitle;
     private String mainSubtitle;

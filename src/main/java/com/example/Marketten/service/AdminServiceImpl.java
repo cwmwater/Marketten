@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AdminServiceImpl implements AdminService {
 
-    // --- 의존성 주입 ---
     private final UserRepository userRepository;
     private final VisitorLogRepository visitorLogRepository;
     private final FinalPostRepository finalPostRepository;
@@ -44,6 +43,7 @@ public class AdminServiceImpl implements AdminService {
     private final SiteConfigRepository siteConfigRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // 모델 변경때문에 yml에서 가져옴
     @Value("${fastapi.server.url}")
     private String fastapiUrl;
     @Value("${fastapi.server.api-key}")
@@ -51,6 +51,7 @@ public class AdminServiceImpl implements AdminService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    // 유저 리스트 (페이징 처리 후) 가져오는 로직
     @Override
     @Transactional(readOnly = true)
     public AdminUserListResponse getUserList(int page, int size, Role role) {
@@ -68,6 +69,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    // 유저의 상세 정보 확인 로직
     @Transactional(readOnly = true)
     public AdminUserDetailDTO getUserDetail(Long userId) {
         User user = userRepository.findById(userId)
@@ -93,6 +95,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // 유저 권한 변경 로직
     @Override
     public void updateUserRole(Long userId, Role newRole) {
         User user = userRepository.findById(userId)
@@ -100,6 +103,7 @@ public class AdminServiceImpl implements AdminService {
         user.setRole(newRole);
     }
 
+    // 관리자 비밀번호 변경 로직
     @Override
     public void updateAdminPassword(Long adminId, String currentPassword, String newPassword, String currentAdminEmail) {
         User admin = userRepository.findById(adminId)
@@ -113,6 +117,7 @@ public class AdminServiceImpl implements AdminService {
         admin.setPassword(passwordEncoder.encode(newPassword));
     }
 
+    // CommonConfig 수정 로직
     @Override
     public void updateCommonConfig(CommonConfigRequestDTO request) {
         updateConfigValue("MAIN_TITLE", request.getMainTitle());
@@ -131,6 +136,7 @@ public class AdminServiceImpl implements AdminService {
         config.updateValue(value);
     }
 
+    // GPT 모델 변경 로직
     @Override
     public void updateGptModel(String modelName) {
         RestTemplate restTemplate = new RestTemplate();
@@ -147,6 +153,7 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
+    // 관리자 대시보드 기간 구현 로직
     @Override
     @Transactional(readOnly = true)
     public AdminDashboardStatsDTO getDashboardChartStats() {
@@ -159,18 +166,21 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // 저장 글의 수 가져오는 로직
     @Override
     @Transactional(readOnly = true)
     public long getTempPostCount() {
         return tempPostRepository.count();
     }
 
+    // 완성된 글의 수 가져오는 로직
     @Override
     @Transactional(readOnly = true)
     public long getFinalPostCount() {
         return finalPostRepository.count();
     }
 
+    // 관리자 대시보드 리포트 형식 가져오는 로직
     @Override
     @Transactional(readOnly = true)
     public ReportSummaryDTO getReportSummary() {
@@ -181,7 +191,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    // --- 통계 계산을 위한 헬퍼(Helper) 메서드들 ---
+    // 통계 계산을 위한 헬퍼 메서드들
     private PeriodStatsDTO getStatsForLast7Days(LocalDateTime now) {
         List<ChartPointDTO> visitors = new ArrayList<>();
         for (int i = 0; i < 7; i++) {

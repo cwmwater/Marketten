@@ -37,7 +37,7 @@ public class LoginServiceImpl implements LoginService {
     private static final long REFRESH_TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 7; // 7일
 
     /**
-     * 이메일/비밀번호로 사용자를 인증하고 토큰 정보를 반환합니다.
+     * 이메일/비밀번호로 사용자를 인증하고 토큰 정보를 반환하는 로직
      */
     @Override
     public TokenInfo authenticateAndGenerateToken(LoginRequest request) {
@@ -70,7 +70,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
-     * User 객체를 기반으로 토큰 정보를 생성하고, 글 작성 여부에 따라 온보딩 필요 여부를 결정합니다.
+     * User 객체를 기반으로 토큰 정보를 생성하고, 글 작성 여부에 따라 온보딩 필요 여부를 결정하는 로직
      */
     @Override
     public TokenInfo generateTokenForUser(User user) {
@@ -98,16 +98,17 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
-     * 사용자의 마지막 로그인 시간을 현재 시간으로 업데이트합니다. (소셜 로그인용)
+     * 사용자의 마지막 로그인 시간을 현재 시간으로 업데이트하는 로직 (소셜 로그인용)
      */
     @Override
     public void updateLastLogin(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
         user.setLastLoginAt(LocalDateTime.now());
-        // 이 메서드는 클래스 전체에 @Transactional이 적용되어 있으므로,
-        // 메서드가 성공적으로 끝나면 변경된 lastLoginAt 값이 자동으로 DB에 UPDATE 됩니다.
+        // 이 메서드는 클래스 전체에 @Transactional이 적용되어 있어서
+        // 메서드가 성공적으로 끝나면 변경된 lastLoginAt 값이 자동으로 DB에 UPDATE
     }
+
 
     @Override
     @Transactional(readOnly = true)

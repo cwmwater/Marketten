@@ -5,7 +5,6 @@ import com.example.Marketten.dto.admin.*;
 import com.example.Marketten.security.CustomUserDetails;
 import com.example.Marketten.service.AdminService;
 import com.example.Marketten.service.CommonService;
-import com.example.Marketten.dto.common.CommonConfigResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -80,7 +79,7 @@ public class AdminController {
     @PatchMapping("/role/{userid}")
     public ResponseEntity<Void> updateUserRole(
             @PathVariable Long userid,
-            @RequestBody UserRoleUpdateRequest request) {
+            @RequestBody UserRoleUpdateRequestDTO request) {
 
         log.info("Request to update role for UserID={}: New Role={}", userid, request.getNewRole());
         adminService.updateUserRole(userid, request.getNewRole());
@@ -88,7 +87,7 @@ public class AdminController {
     }
 
     /**
-     * 대시보드 차트에 필요한 모든 통계 데이터를 조회합니다.
+     * 대시보드 차트에 필요한 모든 통계 데이터를 조회
      * 경로: GET /api/admin
      */
     @GetMapping
@@ -123,7 +122,7 @@ public class AdminController {
     @PatchMapping("/{adminid}")
     public ResponseEntity<Void> updateAdminPassword(
             @PathVariable Long adminid,
-            @RequestBody AdminPasswordUpdateRequest request,
+            @RequestBody AdminPasswordUpdateRequestDTO request,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
         log.info("Request to update password for AdminID: {}", adminid);
@@ -149,5 +148,5 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
-    // 이 외의 API (관리자 비번 수정, 톤 조회/수정 등)는 추후 필요에 따라 구현합니다.
+    // 이 외의 API (관리자 비번 수정, 톤 조회/수정 등)는 추후 필요에 따라 구현
 }

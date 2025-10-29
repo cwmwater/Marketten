@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class CommonConfigRequestDTO {
+    // 메인 페이지용 필드 추가
     private String mainTitle;
     private String mainSubtitle;
     private String callToActionTitle;

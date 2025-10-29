@@ -14,9 +14,9 @@ import java.io.PrintWriter;
 import java.util.Map;
 
 /**
- * 인가(권한) 실패 핸들러입니다.
- * 인증은 되었으나(로그인 O), 해당 리소스에 접근할 권한이 없는 사용자가 접근할 때 호출됩니다.
- * 403 Forbidden JSON 응답을 반환하도록 재정의합니다.
+ * 인가(권한) 실패 핸들러
+ * 인증은 되었으나(로그인 O), 해당 리소스에 접근할 권한이 없는 사용자가 접근할 때 호출됨
+ * 403 Forbidden JSON 응답을 반환하도록 재정의
  */
 @Component
 @Slf4j

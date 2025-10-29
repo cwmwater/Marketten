@@ -31,14 +31,14 @@ public class DataInitializer implements CommandLineRunner {
                 "FOOTER_COPYRIGHT", "© 2025 Marketten Co. All rights reserved."
         );
 
-        // 각 설정 값에 대해 DB에 존재하지 않으면 새로 생성합니다.
+        // 각 설정 값에 대해 DB에 존재하지 않으면 새로 생성
         initialConfigs.forEach(this::initializeConfig);
 
         log.info("데이터베이스 초기 설정 확인 완료.");
     }
 
     private void initializeConfig(String key, String defaultValue) {
-        // DB에 해당 Key가 존재하지 않을 경우에만 새로 생성합니다. (가장 중요!)
+        // DB에 해당 Key가 존재하지 않을 경우에만 새로 생성 (중요함)
         if (!siteConfigRepository.existsById(key)) {
             SiteConfig newConfig = new SiteConfig(key, defaultValue);
             siteConfigRepository.save(newConfig);

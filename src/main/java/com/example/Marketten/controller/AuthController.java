@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
-public class    AuthController {
+public class  AuthController {
 
     private final RegisterService registerService;
     private final LoginService loginService;
@@ -31,6 +31,10 @@ public class    AuthController {
     private final UserRepository userRepository;
     private final UserService userService;
 
+    /**
+     * 회원가입
+     * 경로: POST /api/auth/register
+     */
     @PostMapping("/register")
     public ResponseEntity<TokenInfo> register(@RequestBody @Valid UserRequest userRequest) {
         // 회원가입 후 자동 로그인 결과를 TokenInfo로 반환
@@ -38,6 +42,10 @@ public class    AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(tokenInfo);
     }
 
+    /**
+     * 로그인
+     * 경로: POST /api/auth/login
+     */
     @PostMapping("/login")
     public ResponseEntity<TokenInfo> login(@RequestBody LoginRequest loginRequest) {
         // 로그인 성공 후 Access/Refresh Token을 포함한 TokenInfo 반환
@@ -46,7 +54,7 @@ public class    AuthController {
     }
 
     /**
-     * Refresh Token을 사용하여 Access Token과 Refresh Token을 재발급합니다.
+     * Refresh Token을 사용하여 Access Token과 Refresh Token을 재발급
      * 경로: POST /api/auth/refresh
      */
     @PostMapping("/refresh")
@@ -57,7 +65,7 @@ public class    AuthController {
     }
 
     /**
-     * 로그아웃: Refresh Token을 Redis에서 삭제하여 무효화합니다.
+     * 로그아웃: Refresh Token을 Redis에서 삭제하여 무효화
      * 경로: POST /api/auth/logout
      */
     @PostMapping("/logout")
@@ -68,18 +76,30 @@ public class    AuthController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 이메일 중복 체크: 이메일 존재하는지 여부 확인
+     * 경로: GET /api/auth/check-email
+     */
     @GetMapping("/check-email")
     public ResponseEntity<Boolean> checkEmail(@RequestParam String email) {
         boolean available = !userRepository.existsByEmail(email);
         return ResponseEntity.ok(available); // true: 사용 가능, false: 중복
     }
 
+    /**
+     * 닉네임 중복 체크: 닉네임 존재하는지 여부 확인
+     * 경로: GET /api/auth/check-nickname
+     */
     @GetMapping("/check-nickname")
     public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
         boolean available = !userRepository.existsByNickname(nickname);
         return ResponseEntity.ok(available); // true: 사용 가능, false: 중복
     }
 
+    /**
+     * 비밀번호 재설정: 이메일과 기존 비밀번호를 파라미터로 쓰고 새로운 비밀번호 생성
+     * 경로: PATCH /api/auth/password-reset
+     */
     @PatchMapping("/password-reset")
     public ResponseEntity<Void> resetPassword(@RequestBody @Valid UserEmailPasswordResetRequest request) {
         userService.resetPasswordByEmail(request.getEmail(), request.getNewPassword());

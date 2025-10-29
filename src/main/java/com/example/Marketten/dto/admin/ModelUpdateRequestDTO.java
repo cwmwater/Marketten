@@ -6,5 +6,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ModelUpdateRequestDTO {
+    // 모델 이름
     private String modelName;
 }

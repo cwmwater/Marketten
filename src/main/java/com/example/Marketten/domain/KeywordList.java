@@ -13,14 +13,17 @@ import lombok.*;
 @Builder
 public class KeywordList {
 
+    // 제목 고유 아이디
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long keywordId; //제목 고유 아이디
+    private Long keywordId;
 
+    // 임시 저장 아이디 FK
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "input_id", nullable = false)
-    private TempPost tempPost; //임시 저장 아이디 FK
+    private TempPost tempPost;
 
+    // 키워드 이름
     @Column(length = 255, nullable = false)
     private String keywordName;
 

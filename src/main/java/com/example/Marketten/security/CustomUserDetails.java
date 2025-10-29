@@ -22,12 +22,12 @@ public class CustomUserDetails implements UserDetails {
     // 1. 사용자 권한 목록 반환
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // User 엔티티의 Role 필드를 권한 객체로 변환하여 반환합니다.
-        // Role은 "ROLE_USER", "ROLE_ADMIN" 등의 문자열이어야 합니다.
+        // User 엔티티의 Role 필드를 권한 객체로 변환하여 반환
+        // Role은 "ROLE_USER", "ROLE_ADMIN" 등의 문자열이어야 함
         return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
-        // 💡 주의: User 도메인의 Role Enum에 name() 메서드가 있다고 가정합니다.
-        // 예를 들어 Role.USER.name() -> "USER"가 되어 "ROLE_USER"로 생성됩니다.
+        // 주의: User 도메인의 Role Enum에 name() 메서드가 있다고 가정함
+        // 예를 들어 Role.USER.name() -> "USER"가 되어 "ROLE_USER"로 생성됨
     }
 
     // 2. 사용자의 비밀번호 반환
@@ -51,8 +51,8 @@ public class CustomUserDetails implements UserDetails {
     // 5. 계정 잠금 여부 (true: 잠금되지 않음)
     @Override
     public boolean isAccountNonLocked() {
-        // User.status 필드를 활용하여 계정 잠금 여부를 판단할 수 있습니다.
-        // return user.getStatus() == Status.ACTIVE; 와 같은 로직을 구현할 수 있습니다.
+        // User.status 필드를 활용하여 계정 잠금 여부를 판단할 수 있음
+        // return user.getStatus() == Status.ACTIVE; 와 같은 로직을 구현할 수 있음
         return true;
     }
 
@@ -65,7 +65,7 @@ public class CustomUserDetails implements UserDetails {
     // 7. 계정 활성화 여부 (true: 활성화됨)
     @Override
     public boolean isEnabled() {
-        // User.status 필드를 활용하여 계정 활성화 여부를 판단할 수 있습니다.
+        // User.status 필드를 활용하여 계정 활성화 여부를 판단할 수 있음
         return true;
     }
 }

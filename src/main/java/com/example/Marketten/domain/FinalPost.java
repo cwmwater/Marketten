@@ -17,11 +17,11 @@ public class FinalPost {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long postId; //최종글 고유 아이디
+    private Long postId; // 최종글 고유 아이디
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; //유저 아이디 FK
+    private User user; // 유저 아이디 FK
 
     @Column(length = 255)
     private String finalTitle; //최종글 제목

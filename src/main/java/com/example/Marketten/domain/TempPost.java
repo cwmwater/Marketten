@@ -17,7 +17,7 @@ public class TempPost {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long inputId; //임시 저장 고유 아이디
+    private Long inputId; // 임시 저장 고유 아이디
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

@@ -58,12 +58,12 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     private int clearPost; // 최종 게시물 수
 
     @Column(name = "tutorial_completed", nullable = false)
-    private boolean tutorialCompleted = false;
+    private boolean tutorialCompleted = false; // 온보딩 튜토리얼 완료 여부
 
     // --- Setter 메서드 (UserServiceImpl에서 사용) ---
 
     /**
-     * 비밀번호를 업데이트합니다. (비밀번호 수정 로직에서 사용됨)
+     * 비밀번호를 업데이트 (비밀번호 수정 로직에서 사용됨)
      *
      * @param password 새 암호화된 비밀번호
      */
@@ -72,7 +72,7 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     }
 
     /**
-     * 소셜 프로바이더를 업데이트합니다. (CustomOAuth2UserService에서 사용됨)
+     * 소셜 프로바이더를 업데이트 (CustomOAuth2UserService에서 사용됨)
      *
      * @param provider 새로운 소셜 프로바이더
      */
@@ -81,7 +81,7 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     }
 
     /**
-     * 마지막 로그인 시간을 업데이트합니다. (로그인 서비스 로직에서 사용됨)
+     * 마지막 로그인 시간을 업데이트 (로그인 서비스 로직에서 사용됨)
      *
      * @param lastLoginAt 현재 로그인 시간
      */
@@ -90,7 +90,7 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     }
 
     /**
-     * 닉네임을 업데이트합니다. (UserServiceImpl에서 사용됨)
+     * 닉네임을 업데이트 (UserServiceImpl에서 사용됨)
      *
      * @param nickname 새로운 닉네임
      */
@@ -99,7 +99,7 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     }
 
     /**
-     * 프로필 이미지 URL을 업데이트합니다. (UserServiceImpl에서 사용됨)
+     * 프로필 이미지 URL을 업데이트 (UserServiceImpl에서 사용됨)
      *
      * @param imageUrl 새로운 이미지 URL
      */
@@ -114,7 +114,7 @@ public class User extends BaseEntity { // BaseEntity를 상속받아 시간 필�
     // --- 비즈니스 로직 메서드 ---
 
     /**
-     * 일반 회원가입을 위한 User 엔티티 빌더입니다.
+     * 일반 회원가입을 위한 User 엔티티 빌더
      */
     public static User registerUser(String email, String password, String nickname, String imageUrl, String encodedPassword) {
         return User.builder()

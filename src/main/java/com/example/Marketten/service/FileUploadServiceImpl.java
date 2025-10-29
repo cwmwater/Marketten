@@ -14,14 +14,14 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor // ✨ 생성자 주입을 위해 추가
+@RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
-    // ✨ application.yml에서 정의한 절대 경로를 주입받습니다.
+    // application.yml에서 정의한 절대 경로를 주입받음
     @Value("${file.upload.path}")
     private String uploadPath;
 
-    // ✨ application.yml에서 정의한 URL 접두사를 주입받습니다.
+    // application.yml에서 정의한 URL 접두사를 주입받음
     @Value("${file.upload.url-prefix}")
     private String urlPrefix;
 
@@ -45,7 +45,6 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
 
         // 3. 최종 저장 경로 설정 (절대 경로 사용)
-        // 예: C:/marketten/uploads/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg
         Path targetPath = Paths.get(uploadPath).resolve(savedName);
 
         // 4. 파일 저장
@@ -58,8 +57,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
         log.info("File uploaded successfully to: {}", targetPath);
 
-        // ✨ 5. 파일 이름이나 전체 URL이 아닌, WebConfig와 약속된 URL 경로를 반환
-        // 예: /images/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg
+        // 5. 파일 이름이나 전체 URL이 아닌, WebConfig와 약속된 URL 경로를 반환
         return urlPrefix + savedName;
     }
 }
