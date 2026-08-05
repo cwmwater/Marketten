@@ -1,5 +1,6 @@
 # Multi-stage build로 변경
-FROM openjdk:17-jdk-slim as build
+# openjdk 공식 이미지는 deprecated되어 삭제됨 -> Eclipse Temurin으로 대체
+FROM eclipse-temurin:17-jdk AS build
 
 WORKDIR /app
 
@@ -18,8 +19,8 @@ COPY src src
 # JAR 파일 빌드 (테스트 제외)
 RUN ./gradlew build -x test --no-daemon
 
-# 실행 스테이지
-FROM openjdk:17-jdk-slim
+# 실행 스테이지 (실행에는 JDK 대신 더 가벼운 JRE만 있으면 됨)
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
