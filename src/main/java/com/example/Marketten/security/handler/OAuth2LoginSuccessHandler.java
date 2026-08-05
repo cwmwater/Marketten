@@ -1,90 +1,83 @@
 package com.example.Marketten.security.handler;
 
+import com.example.Marketten.domain.Status;
 import com.example.Marketten.domain.User;
-import com.example.Marketten.dto.auth.TokenInfo;
-import com.example.Marketten.repository.UserRepository;
+import com.example.Marketten.domain.VisitorLog;
+import com.example.Marketten.oauth2.CustomOAuth2User;
+import com.example.Marketten.repository.VisitorLogRepository;
 import com.example.Marketten.service.LoginService;
 import com.example.Marketten.util.JWTUtil;
-import com.google.gson.Gson;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.function.Supplier;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
-    private final LoginService loginService;  // LoginServiceImpl 대신 인터페이스 주입
-    private final UserRepository userRepository;
+    private final Supplier<LoginService> loginServiceSupplier;
+    private final VisitorLogRepository visitorLogRepository;
+
+
+
+    public OAuth2LoginSuccessHandler(JWTUtil jwtUtil, Supplier<LoginService> loginServiceSupplier, VisitorLogRepository visitorLogRepository) {
+        this.jwtUtil = jwtUtil;
+        this.loginServiceSupplier = loginServiceSupplier;
+        this.visitorLogRepository = visitorLogRepository;
+    }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         log.info("OAuth2 Login 성공!");
-
-        String email = null;
+        CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
+        String email = oAuth2User.getEmail();
+        LoginService loginService = loginServiceSupplier.get();
 
         try {
-            // CustomOAuth2User에서 이메일 추출
-            Object principal = authentication.getPrincipal();
+            User user = loginService.getUserByEmail(email);
 
-            if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
-                org.springframework.security.oauth2.core.user.OAuth2User oAuth2User =
-                        (org.springframework.security.oauth2.core.user.OAuth2User) principal;
-
-                // CustomOAuth2User 타입인지 확인
-                if (principal instanceof com.example.Marketten.oauth2.CustomOAuth2User) {
-                    email = ((com.example.Marketten.oauth2.CustomOAuth2User) principal).getEmail();
-                    log.info("CustomOAuth2User에서 이메일 추출: {}", email);
-                } else {
-                    // CustomOAuth2User가 아닌 경우 attributes에서 직접 추출
-                    email = (String) oAuth2User.getAttribute("email");
-                    log.info("OAuth2User attributes에서 이메일 추출: {}", email);
-                }
+            if (user.getStatus() != Status.ACTIVE) {
+                // ... (상태 확인 및 에러 리다이렉트 로직은 동일)
+                response.sendRedirect("http://marketten.shop/login?error=account_inactive");
+                return;
             }
 
-            if (email == null || email.isEmpty()) {
-                throw new RuntimeException("이메일 정보를 가져올 수 없습니다.");
-            }
+            loginService.updateLastLogin(email);
 
-            // DB에서 User 정보 조회
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            VisitorLog log = VisitorLog.builder()
+                    .visitor(user)
+                    .visitDate(LocalDateTime.now())
+                    .build();
+            visitorLogRepository.save(log);
 
-            log.info("DB에서 사용자 정보 조회 완료. Email: {}", email);
+            String accessToken = jwtUtil.generateAccessToken(email);
+            // Refresh Token은 쿠키로 전달하기에는 너무 길고 중요하므로,
+            // 필요하다면 별도의 API를 통해 가져오게 하는 것이 더 안전
 
-            // LoginService를 통해 토큰 생성 및 Redis에 저장
-            TokenInfo tokenInfo = loginService.generateTokenForUser(user);
+            Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+            accessTokenCookie.setPath("/"); // "/" 경로 이하 모든 페이지에서 쿠키 접근 가능
+            accessTokenCookie.setMaxAge(60 * 60 * 7); // 쿠키 유효 시간 (초 단위, 예: 60초)
+            // accessTokenCookie.setHttpOnly(true); // HttpOnly를 true로 하면 JS에서 접근 불가하므로, 여기서는 false(기본값)로 둡니다.
 
-            log.info("OAuth2 로그인 - 토큰 생성 완료. Email: {}, AccessToken: {}, RefreshToken: {}",
-                    email,
-                    tokenInfo.getAccessToken().substring(0, 20) + "...",
-                    tokenInfo.getRefreshToken().substring(0, 20) + "...");
+            response.addCookie(accessTokenCookie);
 
-            // 클라이언트에 JSON 응답 (일반 로그인과 동일한 형식)
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(new Gson().toJson(tokenInfo));
+
+// ✅ accessToken을 URL 파라미터로 전달
+            response.sendRedirect("http://marketten.shop/auth/redirect?accessToken=" + accessToken);
+
+
 
         } catch (Exception e) {
             log.error("OAuth2LoginSuccessHandler Error: ", e);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(new Gson().toJson(
-                    Map.of(
-                            "error", "OAUTH2_LOGIN_FAILED",
-                            "message", e.getMessage() != null ? e.getMessage() : "OAuth2 로그인 처리 실패"
-                    )
-            ));
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "OAuth2 로그인 처리 실패");
         }
     }
 }

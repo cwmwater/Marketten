@@ -5,6 +5,7 @@ import com.example.Marketten.dto.gpt.ContentKeywordRequest;
 import com.example.Marketten.dto.gpt.TitleGenerateRequest;
 import com.example.Marketten.dto.gpt.TitleKeywordRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -14,15 +15,20 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@RequiredArgsConstructor
 public class FastApiClient {
 
     private final RestTemplate restTemplate;
-    private final String BASE_URL = "http://localhost:8000/gpt";
+    private final String gptBaseUrl;
+
+    public FastApiClient(RestTemplate restTemplate,
+                         @Value("${fastapi.server.url}") String baseUrl) {
+        this.restTemplate = restTemplate;
+        this.gptBaseUrl = baseUrl + "/gpt";
+    }
 
     public Map<String, Object> postToFastApi(String path, Object request) {
         try {
-            String fullUrl = BASE_URL + path;
+            String fullUrl = gptBaseUrl + path;
             Map<String, Object> response = restTemplate.postForObject(fullUrl, request, Map.class);
             if (response != null && Boolean.TRUE.equals(response.get("success"))) {
                 return (Map<String, Object>) response.get("data");

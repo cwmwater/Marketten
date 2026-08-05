@@ -1,5 +1,7 @@
 package com.example.Marketten.dto.list;
 
+
+
 import lombok.*;
 
 @Data
@@ -8,8 +10,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class ToneListDTO {
-    private Long toneId;
+public class ToneListRequest {
     private String toneName;
     private String tonePreview;
 }

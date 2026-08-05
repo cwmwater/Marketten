@@ -1,21 +1,21 @@
 # application.yml
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/marketten?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&useUnicode=true}
+    url: ${DB_URL:jdbc:mysql://mysql:3306/marketten?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&useUnicode=true}
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       timeout: 1000 # 연결 실패 시 1초 타임아웃 설정 (서버 멈춤 방지)
+  #TODO redis host 추가
 
-
-  jpa:  
+  jpa:
     database: mysql
     hibernate:
-      ddl-auto: update # 개발 중 데이터 보존을 위해 update로 설정
+      ddl-auto: none # 개발 중 데이터 보존을 위해 update로 설정
     show-sql: true
     properties:
       hibernate:
@@ -24,12 +24,16 @@ spring:
         highlight_sql: true
         use_sql_comments: true
 
-
   # file upload setting
   servlet:
     multipart:
       max-request-size: 30MB
       max-file-size: 10MB
+
+  decorator:
+    datasource:
+      p6spy:
+        enable-logging: false
 
   security:
     oauth2:
@@ -38,7 +42,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "http://localhost:8080/login/oauth2/code/google" # 표준 콜백 URI 사용
+            redirect-uri: ${GOOGLE_REDIRECT_URI} # 표준 콜백 URI 사용
             scope:
               - email
               - profile
@@ -46,14 +50,14 @@ spring:
           naver:
             client-id: ${NAVER_CLIENT_ID}
             client-secret: ${NAVER_CLIENT_SECRET}
-            redirect-uri: "http://localhost:8080/login/oauth2/code/naver" # 표준 콜백 URI 사용
+            redirect-uri: ${NAVER_REDIRECT_URI} # 표준 콜백 URI 사용
             scope: name,email,profile_image
             client-name: Naver
             authorization-grant-type: authorization_code
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET:}
-            redirect-uri: "http://localhost:8080/login/oauth2/code/kakao" # 표준 콜백 URI 사용
+            redirect-uri: ${KAKAO_REDIRECT_URI} # 표준 콜백 URI 사용
             scope: profile_nickname,account_email
             authorization-grant-type: authorization_code
         provider:
@@ -78,17 +82,9 @@ marketten:
   upload:
     path: upload
 
-
 # JWT key (비밀 키)
 jwt:
   secret: ${JWT_SECRET}
-
-
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: true
-
 
 logging:
   level:
@@ -101,3 +97,19 @@ server:
   servlet:
     session:
       tracking-modes: cookie
+
+fastapi:
+  server:
+    url: http://module:8000
+    api-key: TEMP_FASTAPI_API_KEY
+
+app:
+  base-url: https://www.marketten.shop
+
+# 파일 업로드 설정
+file:
+  upload:
+    # 1. 파일이 실제로 저장될 서버의 절대 경로 (폴더 끝에 '/' 포함)
+    path: /app/uploads/
+    # 2. 브라우저가 이 파일들에 접근할 때 사용할 URL 앞부분
+    url-prefix: /images/

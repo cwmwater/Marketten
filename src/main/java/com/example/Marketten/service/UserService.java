@@ -1,42 +1,61 @@
 package com.example.Marketten.service;
 
+import com.example.Marketten.dto.user.MyPageUserResponse;
+import com.example.Marketten.dto.user.PasswordInitRequest;
 import com.example.Marketten.dto.user.UserPasswordUpdateRequest;
-import com.example.Marketten.dto.user.UserResponse;
 import com.example.Marketten.dto.user.UserUpdateRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
 
     /**
-     * 사용자 정보를 조회합니다.
+     * 현재 로그인된 사용자의 정보(마이페이지용)를 조회합니다.
      *
-     * @param email 조회할 사용자의 이메일
-     * @return UserResponse DTO
+     * @param username 현재 인증된 사용자의 이메일
+     * @return MyPageUserResponse DTO
      */
-    UserResponse getUserInfo(String email);
+    MyPageUserResponse getMyInfo(String username);
 
     /**
-     * 사용자 정보를 수정합니다. (닉네임, 이미지 파일 포함)
+     * 현재 로그인된 사용자의 정보(닉네임, 프로필 이미지)를 수정합니다.
      *
-     * @param email        수정할 사용자의 이메일
+     * @param username     현재 인증된 사용자의 이메일
      * @param request      수정 요청 DTO (닉네임 등 텍스트 정보)
      * @param profileImage 업로드된 프로필 이미지 파일 (선택 사항)
-     * @return UserResponse DTO (수정된 사용자 정보)
      */
-    UserResponse updateUserInfo(String email, UserUpdateRequest request, MultipartFile profileImage);
+    void updateMyInfo(String username, UserUpdateRequest request, MultipartFile profileImage);
 
     /**
-     * 비밀번호를 수정합니다. (기존 비밀번호 확인 필수)
+     * 현재 로그인된 사용자의 비밀번호를 변경합니다.
      *
-     * @param email   비밀번호를 수정할 사용자의 이메일
-     * @param request 비밀번호 변경 요청 DTO
+     * @param username 현재 인증된 사용자의 이메일
+     * @param request  비밀번호 변경 요청 DTO
      */
-    void updatePassword(String email, UserPasswordUpdateRequest request);
+    void updateMyPassword(String username, UserPasswordUpdateRequest request);
 
     /**
-     * 회원을 탈퇴시킵니다. (사용자 데이터 및 Refresh Token 삭제)
+     * 현재 로그인된 사용자(소셜)의 비밀번호를 초기 설정합니다.
      *
-     * @param email 탈퇴할 사용자의 이메일
+     * @param username 현재 인증된 사용자의 이메일
+     * @param request  비밀번호 초기 설정 DTO
      */
-    void withdrawUser(String email);
+    void initMyPassword(String username, PasswordInitRequest request);
+
+    /**
+     * 현재 로그인된 사용자를 탈퇴 처리합니다.
+     *
+     * @param username 현재 인증된 사용자의 이메일
+     */
+    void withdrawMe(String username);
+
+
+    /**
+     * 이메일 기반 비밀번호 재설정 (기존 비밀번호 확인 없이 새 비밀번호 설정)
+     *
+     * @param email       비밀번호를 재설정할 사용자의 이메일
+     * @param newPassword 새 비밀번호
+     */
+    void resetPasswordByEmail(String email, String newPassword);
+
+    void completeTutorial(String username);
 }

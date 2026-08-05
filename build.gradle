@@ -40,7 +40,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	// 추가 : DB 로깅 라이브러리
-	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.10.0'
+	//implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.10.0'
 	// 추가 : test 에서 lombok 사용
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'

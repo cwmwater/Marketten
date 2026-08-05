@@ -1,6 +1,5 @@
 package com.example.Marketten.service;
 
-
 import com.example.Marketten.domain.*;
 import com.example.Marketten.dto.gpt.ContentGenerateRequest;
 import com.example.Marketten.dto.gpt.ContentKeywordRequest;
@@ -13,6 +12,7 @@ import com.example.Marketten.dto.temppost.TempPostResponce;
 import com.example.Marketten.dto.temppost.TempPostUpdateRequest;
 import com.example.Marketten.repository.FinalPostRepository;
 import com.example.Marketten.repository.TempPostRepository;
+import com.example.Marketten.repository.ToneListRepository;
 import com.example.Marketten.repository.UserRepository;
 import com.example.Marketten.util.FastApiClient;
 import lombok.RequiredArgsConstructor;
@@ -33,40 +33,35 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     private final FinalPostRepository finalPostRepository;
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
+    private final ToneListRepository toneListRepository;
 
     /** -------------------- 임시 저장글 생성 -------------------- */
     @Override
     public TempPostResponce createTempPost(TempPostRequest request, String userEmail){
 
-        // 이메일로 사용자 조회
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // FinalPost 새로 생성
         FinalPost post = finalPostRepository.save(FinalPost.builder()
                 .user(user)
-                .finalTone("STANDARD")
+                .finalTone("기본")
                 .status("WRITING")
                 .createdDate(LocalDateTime.now())
                 .updatedDate(LocalDateTime.now())
                 .build());
 
-        // TempPost 생성
         TempPost temp = TempPost.builder()
                 .post(post)
+                .user(user)
                 .productInfo(request.getProductInfo())
                 .productFeatures(request.getProductFeatures())
                 .userExperience(request.getUserExperience())
-                .step(request.getStep())
-                .generatedContent(request.getGeneratedContent())
-                .selectedTitle(request.getSelectedTitle())
-                .selectedTone(request.getSelectedTone())
+                .step(1)  // 초기 step은 1
+                .selectedTone(request.getSelectedTone() != null ? request.getSelectedTone() : "STANDARD")
                 .keywords(request.getKeywords())
-                .titleKeywords(request.getTitleKeywords())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        // KeywordList 매핑
         if (request.getKeywordList() != null) {
             request.getKeywordList().forEach(k -> {
                 KeywordList keyword = KeywordList.builder()
@@ -76,17 +71,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                         .peakSearchValue(k.getPeakSearchValue())
                         .build();
                 temp.getKeywordLists().add(keyword);
-            });
-        }
-
-        // TitleList 매핑
-        if (request.getTitleList() != null) {
-            request.getTitleList().forEach(t -> {
-                TitleList title = TitleList.builder()
-                        .tempPost(temp)
-                        .titleName(t.getTitleName())
-                        .build();
-                temp.getTitleLists().add(title);
             });
         }
 
@@ -94,52 +78,104 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         return toResponse(saved);
     }
 
-    /** -------------------- 임시 저장글 수정 -------------------- */
+    /** -------------------- Step 기반 업데이트 -------------------- */
     @Override
     public TempPostResponce updateTempPost(Long inputId, TempPostUpdateRequest request) {
         TempPost temp = tempPostRepository.findById(inputId)
                 .orElseThrow(() -> new RuntimeException("TempPost not found"));
 
-        // TempPost 필드 덮어쓰기
-        temp.setProductInfo(request.getProductInfo());
-        temp.setProductFeatures(request.getProductFeatures());
-        temp.setUserExperience(request.getUserExperience());
-        temp.setKeywords(request.getKeywords());
-        temp.setTitleKeywords(request.getTitleKeywords());
-        temp.setGeneratedContent(request.getGeneratedContent());
-        temp.setSelectedTitle(request.getSelectedTitle());
-        temp.setSelectedTone(request.getSelectedTone());
-        temp.setStep(request.getStep());
-
-        // TitleList 갱신
-        if (request.getTitleList() != null) {
-            temp.getTitleLists().clear();
-            request.getTitleList().forEach(t -> {
-                TitleList title = TitleList.builder()
-                        .tempPost(temp)
-                        .titleName(t.getTitleName())
-                        .build();
-                temp.getTitleLists().add(title);
-            });
+        // Step 값 결정
+        Integer step = request.getStep();
+        if (step != null) {
+            temp.setStep(step);
+        } else {
+            step = temp.getStep();
         }
 
-        // KeywordList 갱신
-        if (request.getKeywordList() != null) {
-            temp.getKeywordLists().clear();
-            request.getKeywordList().forEach(k -> {
-                KeywordList keyword = KeywordList.builder()
-                        .tempPost(temp)
-                        .keywordName(k.getKeywordName())
-                        .averageSearchValue(k.getAverageSearchValue())
-                        .peakSearchValue(k.getPeakSearchValue())
-                        .build();
-                temp.getKeywordLists().add(keyword);
-            });
+        // Step별 허용 필드 업데이트
+        if (step == 1) {
+            if (request.getProductInfo() != null) temp.setProductInfo(request.getProductInfo());
+            if (request.getProductFeatures() != null) temp.setProductFeatures(request.getProductFeatures());
+            if (request.getUserExperience() != null) temp.setUserExperience(request.getUserExperience());
+            if (request.getSelectedTone() != null) temp.setSelectedTone(request.getSelectedTone());
+            if (request.getKeywords() != null) temp.setKeywords(request.getKeywords());
+
+            // 키워드 리스트 업데이트
+            if (request.getKeywordList() != null) {
+                temp.getKeywordLists().clear();
+                request.getKeywordList().forEach(k -> {
+                    KeywordList keyword = KeywordList.builder()
+                            .tempPost(temp)
+                            .keywordName(k.getKeywordName())
+                            .averageSearchValue(k.getAverageSearchValue())
+                            .peakSearchValue(k.getPeakSearchValue())
+                            .build();
+                    temp.getKeywordLists().add(keyword);
+                });
+            }
+
+            // FinalPost 동기화
+            if (temp.getPost() != null && request.getSelectedTone() != null) {
+                temp.getPost().setFinalTone(request.getSelectedTone());
+                finalPostRepository.save(temp.getPost());
+            }
+        } else if (step == 2) {
+            if (request.getGeneratedContent() != null) temp.setGeneratedContent(request.getGeneratedContent());
+            if (request.getSelectedTone() != null) temp.setSelectedTone(request.getSelectedTone());
+            if (request.getKeywords() != null) temp.setKeywords(request.getKeywords());
+            if (request.getTitleKeywords() != null) temp.setTitleKeywords(request.getTitleKeywords());
+
+            // 키워드 리스트
+            if (request.getKeywordList() != null) {
+                temp.getKeywordLists().clear();
+                request.getKeywordList().forEach(k -> {
+                    KeywordList keyword = KeywordList.builder()
+                            .tempPost(temp)
+                            .keywordName(k.getKeywordName())
+                            .averageSearchValue(k.getAverageSearchValue())
+                            .peakSearchValue(k.getPeakSearchValue())
+                            .build();
+                    temp.getKeywordLists().add(keyword);
+                });
+            }
+
+            // 제목 리스트
+            if (request.getTitleList() != null) {
+                temp.getTitleLists().clear();
+                request.getTitleList().forEach(t -> {
+                    TitleList title = TitleList.builder()
+                            .tempPost(temp)
+                            .titleName(t.getTitleName())
+                            .build();
+                    temp.getTitleLists().add(title);
+                });
+            }
+
+            // FinalPost 동기화
+            if (temp.getPost() != null) {
+                if (request.getGeneratedContent() != null) temp.getPost().setFinalContent(request.getGeneratedContent());
+                if (request.getTitleKeywords() != null) temp.getPost().setFinalTitle(request.getTitleKeywords());
+                if (request.getSelectedTone() != null) temp.getPost().setFinalTone(request.getSelectedTone());
+                temp.getPost().setUpdatedDate(LocalDateTime.now());
+                finalPostRepository.save(temp.getPost());
+            }
+        } else if (step == 3) {
+            if (request.getGeneratedContent() != null) temp.setGeneratedContent(request.getGeneratedContent());
+            if (request.getTitleKeywords() != null) temp.setTitleKeywords(request.getTitleKeywords());
+
+            // FinalPost 동기화
+            if (temp.getPost() != null) {
+                if (request.getGeneratedContent() != null) temp.getPost().setFinalContent(request.getGeneratedContent());
+                if (request.getTitleKeywords() != null) temp.getPost().setFinalTitle(request.getTitleKeywords());
+                temp.getPost().setUpdatedDate(LocalDateTime.now());
+                finalPostRepository.save(temp.getPost());
+            }
         }
 
         temp.setUpdatedAt(LocalDateTime.now());
         return toResponse(tempPostRepository.save(temp));
     }
+
 
     /** -------------------- 단계별 임시 저장글 조회 -------------------- */
     @Override
@@ -147,7 +183,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         TempPost temp = tempPostRepository.findById(inputId)
                 .orElseThrow(() -> new RuntimeException("TempPost not found"));
 
-        // step 체크 제거
         return toResponse(temp);
     }
 
@@ -157,18 +192,30 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         TempPost temp = tempPostRepository.findById(inputId)
                 .orElseThrow(() -> new RuntimeException("TempPost not found"));
 
-        // ✅ 먼저 TempPost 필드 수정
-        temp.setProductInfo(request.getProductInfo());
-        temp.setProductFeatures(request.getProductFeatures());
-        temp.setUserExperience(request.getUserExperience());
-        temp.setSelectedTone(request.getSelectedTone());
-        temp.setStep(request.getStep());
-        temp.setKeywords(request.getKeywords());
-        temp.setTitleKeywords(request.getTitleKeywords());
-        temp.setGeneratedContent(request.getGeneratedContent());
-        temp.setSelectedTitle(request.getSelectedTitle());
+        // 먼저 Step 2 데이터 업데이트
+        if (request.getProductInfo() != null) {
+            temp.setProductInfo(request.getProductInfo());
+        }
+        if (request.getProductFeatures() != null) {
+            temp.setProductFeatures(request.getProductFeatures());
+        }
+        if (request.getUserExperience() != null) {
+            temp.setUserExperience(request.getUserExperience());
+        }
+        if (request.getSelectedTone() != null) {
+            temp.setSelectedTone(request.getSelectedTone());
+        }
+        if (request.getGeneratedContent() != null) {
+            temp.setGeneratedContent(request.getGeneratedContent());
+        }
+        if (request.getKeywords() != null) {
+            temp.setKeywords(request.getKeywords());
+        }
+        if (request.getTitleKeywords() != null) {
+            temp.setTitleKeywords(request.getTitleKeywords());
+        }
 
-        // ✅ 리스트도 먼저 갱신
+        // 키워드 리스트 업데이트
         if (request.getKeywordList() != null) {
             temp.getKeywordLists().clear();
             request.getKeywordList().forEach(k -> {
@@ -182,6 +229,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
             });
         }
 
+        // 제목 리스트 업데이트
         if (request.getTitleList() != null) {
             temp.getTitleLists().clear();
             request.getTitleList().forEach(t -> {
@@ -193,15 +241,19 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
             });
         }
 
-        // ✅ 수정된 상태를 기반으로 액션 수행
+        // 액션 수행
         switch (action) {
             case "generateContent":
+                String tonePreview = toneListRepository.findByToneName(temp.getSelectedTone())
+                        .map(ToneList::getTonePreview)
+                        .orElse("PREVIEW");
+
                 ContentGenerateRequest contentReq = ContentGenerateRequest.builder()
                         .productInfo(temp.getProductInfo())
                         .productFeatures(temp.getProductFeatures())
                         .userExperience(temp.getUserExperience())
                         .selectedTone(temp.getSelectedTone())
-                        .tonePreview("PREVIEW")
+                        .tonePreview(tonePreview)
                         .keywords(temp.getKeywords())
                         .build();
                 String generated = fastApiClient.generateContent(contentReq);
@@ -219,7 +271,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 keywordMap.forEach((name, statsObj) -> {
                     Map<String, Object> stats = (Map<String, Object>) statsObj;
                     Integer average = stats.get("평균 수치") instanceof Number ? ((Number) stats.get("평균 수치")).intValue() : null;
-                    Integer peak = stats.get("최고 수치") instanceof Number ? ((Number) stats.get("최고 수치")).intValue() : null;
+                    Integer peak = stats.get("최대 수치") instanceof Number ? ((Number) stats.get("최대 수치")).intValue() : null;
 
                     KeywordList keyword = KeywordList.builder()
                             .tempPost(temp)
@@ -229,7 +281,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                             .build();
                     temp.getKeywordLists().add(keyword);
                 });
-                temp.setKeywords(request.getKeywords()); // 선택 키워드만 저장
                 break;
 
             case "analyzeTitleKeywords":
@@ -237,8 +288,26 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                         .generatedContent(temp.getGeneratedContent())
                         .build();
                 Map<String, Object> titleKeywordMap = fastApiClient.analyzeTitleKeywords(titleKeywordReq);
-                temp.setTitleKeywords(titleKeywordMap.toString());
+
+                // 기존 keywordLists 초기화
+                temp.getKeywordLists().clear();
+
+                // titleKeywordMap 데이터를 keywordLists로 변환하여 추가
+                titleKeywordMap.forEach((name, statsObj) -> {
+                    Map<String, Object> stats = (Map<String, Object>) statsObj;
+                    Integer average = stats.get("평균 수치") instanceof Number ? ((Number) stats.get("평균 수치")).intValue() : null;
+                    Integer peak = stats.get("최대 수치") instanceof Number ? ((Number) stats.get("최대 수치")).intValue() : null;
+
+                    KeywordList keyword = KeywordList.builder()
+                            .tempPost(temp)
+                            .keywordName(name)
+                            .averageSearchValue(average)
+                            .peakSearchValue(peak)
+                            .build();
+                    temp.getKeywordLists().add(keyword);
+                });
                 break;
+
 
             case "generateTitles":
                 TitleGenerateRequest titleReq = TitleGenerateRequest.builder()
@@ -265,8 +334,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         return toResponse(saved);
     }
 
-
-
     /** -------------------- 임시 저장글 삭제 -------------------- */
     @Override
     public void deleteTempPost(Long inputId) {
@@ -278,7 +345,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     /** -------------------- 엔티티 → DTO 변환 -------------------- */
     private TempPostResponce toResponse(TempPost temp) {
 
-        // TitleListDTO 변환 (null 체크 추가)
         List<TitleListDTO> titles = temp.getTitleLists() != null ?
                 temp.getTitleLists().stream()
                         .map(t -> TitleListDTO.builder()
@@ -287,9 +353,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                                 .titleName(t.getTitleName())
                                 .build())
                         .collect(Collectors.toList())
-                : new ArrayList<>();  // ← null이면 빈 리스트
+                : new ArrayList<>();
 
-        // KeywordListDTO 변환 (null 체크 추가)
         List<KeywordListDTO> keywords = temp.getKeywordLists() != null ?
                 temp.getKeywordLists().stream()
                         .map(k -> KeywordListDTO.builder()
@@ -300,7 +365,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                                 .peakSearchValue(k.getPeakSearchValue())
                                 .build())
                         .collect(Collectors.toList())
-                : new ArrayList<>();  // ← null이면 빈 리스트
+                : new ArrayList<>();
 
         return TempPostResponce.builder()
                 .inputId(temp.getInputId())
@@ -311,7 +376,6 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 .keywords(temp.getKeywords())
                 .titleKeywords(temp.getTitleKeywords())
                 .generatedContent(temp.getGeneratedContent())
-                .selectedTitle(temp.getSelectedTitle())
                 .selectedTone(temp.getSelectedTone())
                 .step(temp.getStep())
                 .updatedAt(temp.getUpdatedAt())
@@ -319,5 +383,4 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 .keywordList(keywords)
                 .build();
     }
-
 }

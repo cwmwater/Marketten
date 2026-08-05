@@ -20,6 +20,10 @@ public class TempPost {
     private Long inputId; //임시 저장 고유 아이디
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // 작성자 정보 FK
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private FinalPost post; //최종 글 아이디 FK
 
@@ -39,15 +43,12 @@ public class TempPost {
     private String titleKeywords; // 선택된 제목
 
     @Column(length = 20, nullable = false)
-    private String selectedTone = "STANDARD"; // 선택한 톤
+    private String selectedTone = "기본"; // 선택한 톤
 
     private Integer step = 1; //현재 진행 페이지
 
     @Column(length = 5000)
     private String generatedContent; // 생성 글
-
-    @Column(length = 255)
-    private String selectedTitle; //생성 제목
 
     private LocalDateTime updatedAt = LocalDateTime.now(); // 수정 일시
 

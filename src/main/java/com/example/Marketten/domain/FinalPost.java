@@ -30,7 +30,7 @@ public class FinalPost {
     private String finalContent; //최종글 본문
 
     @Column(length = 50, nullable = false)
-    private String finalTone = "STANDARD"; //톤
+    private String finalTone = "기본"; //톤
 
     @Column(length = 20, nullable = false)
     private String status = "WRITING"; // 작업 진행도
