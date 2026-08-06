@@ -5,6 +5,7 @@ import com.example.Marketten.dto.gpt.ContentGenerateRequest;
 import com.example.Marketten.dto.gpt.ContentKeywordRequest;
 import com.example.Marketten.dto.gpt.TitleGenerateRequest;
 import com.example.Marketten.dto.gpt.TitleKeywordRequest;
+import com.example.Marketten.dto.gpt.ToneExamplePayload;
 import com.example.Marketten.dto.list.KeywordListDTO;
 import com.example.Marketten.dto.list.TitleListDTO;
 import com.example.Marketten.dto.temppost.TempPostRequest;
@@ -12,14 +13,18 @@ import com.example.Marketten.dto.temppost.TempPostResponce;
 import com.example.Marketten.dto.temppost.TempPostUpdateRequest;
 import com.example.Marketten.repository.FinalPostRepository;
 import com.example.Marketten.repository.TempPostRepository;
+import com.example.Marketten.repository.ToneExampleRepository;
 import com.example.Marketten.repository.ToneListRepository;
 import com.example.Marketten.repository.UserRepository;
 import com.example.Marketten.util.FastApiClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +39,8 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
     private final UserRepository userRepository;
     private final FastApiClient fastApiClient;
     private final ToneListRepository toneListRepository;
+    private final ToneExampleRepository toneExampleRepository;
+    private final ObjectMapper objectMapper;
 
     /** -------------------- 임시 저장글 생성 -------------------- */
     @Override
@@ -244,9 +251,19 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
         // 액션 수행
         switch (action) {
             case "generateContent":
-                String tonePreview = toneListRepository.findByToneName(temp.getSelectedTone())
-                        .map(ToneList::getTonePreview)
-                        .orElse("PREVIEW");
+                ToneList selectedTone = toneListRepository.findByToneName(temp.getSelectedTone())
+                        .orElse(null);
+                String tonePreview = selectedTone != null ? selectedTone.getTonePreview() : "PREVIEW";
+
+                // RAG 검색 대상: 선택된 톤에 등록된 예문 전체(텍스트+임베딩)
+                List<ToneExamplePayload> toneExamples = selectedTone == null
+                        ? Collections.emptyList()
+                        : toneExampleRepository.findByTone_ToneId(selectedTone.getToneId()).stream()
+                                .map(e -> ToneExamplePayload.builder()
+                                        .text(e.getExampleText())
+                                        .embedding(readEmbedding(e.getEmbedding()))
+                                        .build())
+                                .collect(Collectors.toList());
 
                 ContentGenerateRequest contentReq = ContentGenerateRequest.builder()
                         .productInfo(temp.getProductInfo())
@@ -254,6 +271,7 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                         .userExperience(temp.getUserExperience())
                         .selectedTone(temp.getSelectedTone())
                         .tonePreview(tonePreview)
+                        .toneExamples(toneExamples)
                         .keywords(temp.getKeywords())
                         .build();
                 String generated = fastApiClient.generateContent(contentReq);
@@ -382,5 +400,14 @@ public class TempPostUpdateServiceImpl implements TempPostUpdateService {
                 .titleList(titles)
                 .keywordList(keywords)
                 .build();
+    }
+
+    // ToneExample.embedding에 JSON 문자열로 저장된 벡터를 List<Double>로 역직렬화
+    private List<Double> readEmbedding(String embeddingJson) {
+        try {
+            return objectMapper.readValue(embeddingJson, new com.fasterxml.jackson.core.type.TypeReference<List<Double>>() {});
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("임베딩 역직렬화 실패: " + e.getMessage(), e);
+        }
     }
 }
