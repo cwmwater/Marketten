@@ -57,5 +57,11 @@ public class FastApiClient {
         Map<String, Object> result = postToFastApi("/titles", request);
         return new HashSet<>((List<String>) result.get("titles"));
     }
+
+    // RAG용 텍스트 임베딩 요청
+    public List<Double> embedText(String text) {
+        Map<String, Object> result = postToFastApi("/embed", Map.of("text", text));
+        return (List<Double>) result.get("embedding");
+    }
 }
 
