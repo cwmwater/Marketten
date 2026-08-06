@@ -115,6 +115,15 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 5-1. 현재 GPT 모델 조회 API
+     */
+    @GetMapping("/model")
+    public ResponseEntity<ModelResponseDTO> getGPTModel() {
+        String modelName = adminService.getGptModel();
+        return ResponseEntity.ok(new ModelResponseDTO(modelName));
+    }
+
 
     /**
      * 관리자 자신의 비밀번호 변경

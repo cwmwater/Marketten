@@ -148,6 +148,20 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public String getGptModel() {
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            Map<String, Object> response = restTemplate.getForObject(fastapiUrl + "/config/model", Map.class);
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            return (String) data.get("model_name");
+        } catch (Exception e) {
+            log.error("Error while communicating with FastAPI server", e);
+            throw new RuntimeException("FastAPI 서버와 통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public AdminDashboardStatsDTO getDashboardChartStats() {
         LocalDateTime now = LocalDateTime.now();

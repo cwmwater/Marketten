@@ -22,6 +22,8 @@ public interface AdminService {
 
     void updateGptModel(String modelName);
 
+    String getGptModel();
+
     // --- 통계 ---
     AdminDashboardStatsDTO getDashboardChartStats();
 
